@@ -1,0 +1,344 @@
+{
+  "date": "2026-10-02",
+  "studySha256": "fba2c71285cc720d8e3859f2a4e5493ba7b9f14446e2668ef5ba0843f50a717e",
+  "tasksSha256": "cab9dfb058026d54c08ec2933e6bfd1a20219429281de3da9d409085226c8bfd",
+  "participants": {
+    "baseline": {
+      "typecheckPassed": true,
+      "tasks": [
+        {
+          "task": 1,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        },
+        {
+          "task": 2,
+          "passed": 3,
+          "total": 3,
+          "solved": true
+        },
+        {
+          "task": 3,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        },
+        {
+          "task": 4,
+          "passed": 5,
+          "total": 5,
+          "solved": true
+        },
+        {
+          "task": 5,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        },
+        {
+          "task": 6,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        }
+      ],
+      "solved": 6,
+      "totalTasks": 6,
+      "passedCases": 24,
+      "totalCases": 24,
+      "cases": [
+        {
+          "task": 1,
+          "name": "valid numbers and null",
+          "passed": true
+        },
+        {
+          "task": 1,
+          "name": "normalization and decimal format",
+          "passed": true
+        },
+        {
+          "task": 1,
+          "name": "shape and numeric validity",
+          "passed": true
+        },
+        {
+          "task": 1,
+          "name": "new clean object without mutation",
+          "passed": true
+        },
+        {
+          "task": 2,
+          "name": "preserve omitted values and clone tags",
+          "passed": true
+        },
+        {
+          "task": 2,
+          "name": "null and zero semantics",
+          "passed": true
+        },
+        {
+          "task": 2,
+          "name": "replacement is cloned and empty tags respected",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "dedup count latest and stable order",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "composite keys with delimiters",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "repeated identity reassigned to another listing is ignored",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "empty and immutable",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "validation and empty",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "ceiling order and replacement worker",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "failure drains before rejecting",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "undefined sync throw is still rejection",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "undefined results serial and excess limit",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "in-flight coalescing and independent keys",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "caches undefined success",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "rejection evicts and all callers fail",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "synchronous throw becomes retryable rejection",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "outcomes and unknown errors",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "bounded and await completion",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "sync storage error is per-record",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "invalid limit rejects even when empty",
+          "passed": true
+        }
+      ],
+      "executionFailed": false
+    },
+    "course": {
+      "typecheckPassed": true,
+      "tasks": [
+        {
+          "task": 1,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        },
+        {
+          "task": 2,
+          "passed": 3,
+          "total": 3,
+          "solved": true
+        },
+        {
+          "task": 3,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        },
+        {
+          "task": 4,
+          "passed": 5,
+          "total": 5,
+          "solved": true
+        },
+        {
+          "task": 5,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        },
+        {
+          "task": 6,
+          "passed": 4,
+          "total": 4,
+          "solved": true
+        }
+      ],
+      "solved": 6,
+      "totalTasks": 6,
+      "passedCases": 24,
+      "totalCases": 24,
+      "cases": [
+        {
+          "task": 1,
+          "name": "valid numbers and null",
+          "passed": true
+        },
+        {
+          "task": 1,
+          "name": "normalization and decimal format",
+          "passed": true
+        },
+        {
+          "task": 1,
+          "name": "shape and numeric validity",
+          "passed": true
+        },
+        {
+          "task": 1,
+          "name": "new clean object without mutation",
+          "passed": true
+        },
+        {
+          "task": 2,
+          "name": "preserve omitted values and clone tags",
+          "passed": true
+        },
+        {
+          "task": 2,
+          "name": "null and zero semantics",
+          "passed": true
+        },
+        {
+          "task": 2,
+          "name": "replacement is cloned and empty tags respected",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "dedup count latest and stable order",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "composite keys with delimiters",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "repeated identity reassigned to another listing is ignored",
+          "passed": true
+        },
+        {
+          "task": 3,
+          "name": "empty and immutable",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "validation and empty",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "ceiling order and replacement worker",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "failure drains before rejecting",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "undefined sync throw is still rejection",
+          "passed": true
+        },
+        {
+          "task": 4,
+          "name": "undefined results serial and excess limit",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "in-flight coalescing and independent keys",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "caches undefined success",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "rejection evicts and all callers fail",
+          "passed": true
+        },
+        {
+          "task": 5,
+          "name": "synchronous throw becomes retryable rejection",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "outcomes and unknown errors",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "bounded and await completion",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "sync storage error is per-record",
+          "passed": true
+        },
+        {
+          "task": 6,
+          "name": "invalid limit rejects even when empty",
+          "passed": true
+        }
+      ],
+      "executionFailed": false
+    }
+  },
+  "interpretation": "Ceiling effect: both participants solved all tasks. This run does not demonstrate learning gains."
+}

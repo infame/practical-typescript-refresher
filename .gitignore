@@ -1,0 +1,7 @@
+node_modules/
+work/
+dist/
+/*.html
+assets/highlight.css
+assets/course.js
+.DS_Store
