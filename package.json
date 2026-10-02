@@ -11,7 +11,7 @@
     "check:site": "node scripts/check-site.mjs",
     "verify": "npm run check && npm test && npm run check:snippets && npm run build && npm run check:site",
     "eval": "node benchmarks/evaluate.mjs",
-    "format": "prettier --write assets/style.css assets/app.js scripts examples benchmarks course.json package.json tsconfig.json .github/workflows"
+    "format": "prettier --write assets/style.css assets/app.js assets/training.js scripts examples benchmarks course.json training.json package.json tsconfig.json .github/workflows"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",

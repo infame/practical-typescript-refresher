@@ -5,6 +5,15 @@ A practical refresher for developers who know programming and have forgotten the
 
 **The course is in Russian.** [Русский README](README.ru.md) · [Curriculum](course.json) · [Evaluation](docs/EVALUATION.md) · [Content audit](docs/AUDIT.md)
 
+
+## Find your gaps, then practice
+
+Start with the 12-question diagnostic: wrong or unknown answers produce a topic-by-topic revision plan with explanations, relevant chapters and official MDN / TypeScript / Node documentation. The score measures these answers, not coding competence. No account, analytics or uploaded answers.
+
+Choose one of four practice domains: product catalog, analytics events, background jobs or profile sync. Each has a different task and a spoiler walkthrough. Shared lessons cover the same TS fundamentals; changing the domain does not relabel every lesson. [Practice specifications](docs/DOMAIN-PRACTICE.md).
+
+If this refresher is useful, a GitHub star helps others discover it. Contributions that improve explanations, catch mistakes or add equivalent practice tasks are welcome.
+
 ## Start locally
 
 Requires Node.js 24+ and npm.

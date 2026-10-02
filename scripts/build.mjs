@@ -6,6 +6,7 @@ import hljs from 'highlight.js';
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
 const config = JSON.parse(await fs.readFile(path.join(root, 'course.json'), 'utf8'));
+const training = JSON.parse(await fs.readFile(path.join(root, 'training.json'), 'utf8'));
 const escape = (value) =>
   String(value).replace(
     /[&<>"']/g,
@@ -50,9 +51,29 @@ for (const track of Object.values(config.tracks)) {
     throw new Error('Invalid track');
   }
 }
+for (const question of training.questions) {
+  if (
+    !Number.isInteger(question.answer) ||
+    question.answer < 0 ||
+    question.answer >= question.options.length ||
+    !lessons.some((l) => l.number === question.chapter) ||
+    !question.url.startsWith('https://')
+  )
+    throw new Error('Invalid diagnostic question');
+}
+if (new Set(training.domains.map((d) => d.id)).size !== training.domains.length)
+  throw new Error('Duplicate domain');
+for (const domain of training.domains) {
+  if (
+    !/^[a-z]+$/.test(domain.id) ||
+    domain.chapters.some((n) => !lessons.some((l) => l.number === n))
+  )
+    throw new Error('Invalid domain');
+}
 const publicConfig = {
   title: config.title,
   tracks: config.tracks,
+  training,
   lessons: lessons.map(({ source, ...lesson }) => lesson),
 };
 await fs.mkdir(dist, { recursive: true });
@@ -84,7 +105,7 @@ function pager(index, location) {
   return `<nav class="pager" aria-label="Навигация ${location}"><a class="prev" data-prev href="${prev?.href || 'index.html'}"><span>‹ Prev</span><small>${escape(prev?.title || 'Оглавление')}</small></a><span class="page-count">${index + 1} / ${lessons.length}</span><a class="next" data-next href="${next?.href || 'index.html'}"><span>${next ? 'Next ›' : 'К оглавлению ›'}</span><small>${escape(next?.title || 'Курс завершён')}</small></a></nav>`;
 }
 function shell(title, content, current = 0, toc = []) {
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(config.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${escape(config.title)}</title><link rel="stylesheet" href="assets/highlight.css"><link rel="stylesheet" href="assets/style.css"><script src="assets/course.js" defer></script><script src="assets/app.js" defer></script></head><body data-lesson="${current}"><a class="skip" href="#content">К содержанию</a><header class="site-header"><a class="brand" href="index.html">${escape(config.title)}</a><span>${escape(config.description)}</span></header><div class="layout"><aside><details class="course-menu" open><summary>Оглавление курса</summary><label class="search-label" for="chapter-search">Найти главу</label><input id="chapter-search" type="search" placeholder="Типы, async, parser…" autocomplete="off"><div class="progress-box"><p id="progress-label" aria-live="polite">Пройдено 0 из ${lessons.length} глав · 0%</p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><small id="progress-scope">По завершённым главам</small><p class="storage-note" hidden>Браузер не сохраняет прогресс. Откройте курс через локальный сервер.</p></div><ol class="chapters">${lessons.map((l) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${l.number}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol><p id="search-empty" hidden>Главы не найдены.</p></details></aside><main id="content" tabindex="-1">${content}</main>${toc.length ? `<nav class="local-toc" aria-label="В этой главе"><strong>В этой главе</strong>${toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>` : ''}</div><footer class="site-footer">Объяснения и задания авторские. Исходники — Markdown; проверки — TypeScript и Node.</footer></body></html>`;
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(config.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${escape(config.title)}</title><link rel="stylesheet" href="assets/highlight.css"><link rel="stylesheet" href="assets/style.css"><script src="assets/course.js" defer></script><script src="assets/app.js" defer></script><script src="assets/training.js" defer></script></head><body data-lesson="${current}"><a class="skip" href="#content">К содержанию</a><header class="site-header"><a class="brand" href="index.html">${escape(config.title)}</a><span>${escape(config.description)}</span></header><div class="layout"><aside><details class="course-menu" open><summary>Оглавление курса</summary><label class="search-label" for="chapter-search">Найти главу</label><input id="chapter-search" type="search" placeholder="Типы, async, parser…" autocomplete="off"><div class="progress-box"><p id="progress-label" aria-live="polite">Пройдено 0 из ${lessons.length} глав · 0%</p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><small id="progress-scope">По завершённым главам</small><p class="storage-note" hidden>Браузер не сохраняет прогресс. Откройте курс через локальный сервер.</p></div><ol class="chapters">${lessons.map((l) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${l.number}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol><p id="search-empty" hidden>Главы не найдены.</p></details></aside><main id="content" tabindex="-1">${content}</main>${toc.length ? `<nav class="local-toc" aria-label="В этой главе"><strong>В этой главе</strong>${toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>` : ''}</div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">Исходники и обсуждение на GitHub</a> · Объяснения и задания авторские. Исходники — Markdown; проверки — TypeScript и Node.</footer></body></html>`;
 }
 async function output(file, html) {
   // Root copies keep previously shared local/file links working. Pages uses dist only.
@@ -119,6 +140,36 @@ for (const [index, lesson] of lessons.entries()) {
     ),
   );
 }
+const domainSelector = `<label for="domain-select">Предметная область</label><select id="domain-select">${training.domains.map((d) => `<option value="${d.id}">${escape(d.title)}</option>`).join('')}</select><p id="domain-summary">${escape(training.domains[0].summary)}</p>`;
+const diagnostic = `<section id="diagnostic"><h2>Что стоит освежить?</h2><p>12 коротких вопросов на 5–10 минут. Выберите «Не знаю», если не можете объяснить ответ. После проверки получите темы для повторения, разборы и ссылки на официальные справочники. Это ориентир для самостоятельной практики; результат выбора ответа ещё не означает, что вы сможете написать решение.</p><details><summary>Начать диагностику</summary><form id="diagnostic-form">${training.questions.map((q, i) => `<fieldset><legend>${i + 1}. ${escape(q.topic)}</legend><pre><code>${hljs.highlight(q.code, { language: 'typescript' }).value}</code></pre><p>${escape(q.prompt)}</p>${[...q.options, 'Не знаю'].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}"> ${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit">Показать темы для повторения</button><button type="reset" class="secondary-button">Пройти заново</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
+await output(
+  'practice.html',
+  shell(
+    'Практика в выбранной области',
+    `<h1>Одна база TS, разные задачи</h1><p>Выберите область и напишите решение до чтения Спойлера. Здесь меняются условия задачи; общие главы объясняют те же инструменты TypeScript.</p>${domainSelector}${training.domains
+      .map(
+        (d) =>
+          `<article data-domain="${d.id}">${md.render(d.task)}<h3>Что повторить</h3><ul>${d.chapters
+            .map((n) => {
+              const l = lessons.find((l) => l.number === n);
+              return `<li><a href="${l.href}">${escape(l.title)}</a></li>`;
+            })
+            .join('')}</ul></article>`,
+      )
+      .join(
+        '',
+      )}<p><a href="index.html#diagnostic">Найти темы для повторения</a> · <a href="docs/DOMAIN-PRACTICE.md">Условия и разборы в Markdown</a></p>`,
+  ),
+);
+await fs.writeFile(
+  path.join(root, 'docs/DOMAIN-PRACTICE.md'),
+  '# Практика по предметным областям\n\n' +
+    training.domains.map((d) => '# ' + d.title + '\n\n' + d.task).join('\n\n'),
+);
+await fs.copyFile(
+  path.join(root, 'docs/DOMAIN-PRACTICE.md'),
+  path.join(dist, 'docs/DOMAIN-PRACTICE.md'),
+);
 const tracks = Object.entries(config.tracks)
   .map(([key, track]) => {
     const first = lessons.find((l) => l.number === track.chapters[0]);
@@ -128,8 +179,8 @@ const tracks = Object.entries(config.tracks)
 await output(
   'index.html',
   shell(
-    'План подготовки',
-    `<section class="intro"><p class="context">Для разработчиков, которые возвращаются к TS</p><h1>Вспомнить язык.<br>Вернуться к практике.</h1><p class="lead">${lessons.length} глав: объяснение → код → задача → Спойлер. От вывода типов до конкурентного импорта с тестами.</p><p>Вы знаете программирование, но забыли детали TypeScript? Начните с языка. Готовитесь писать код на интервью? Выберите практический маршрут.</p><a class="primary-link" id="resume-link" href="11-language-refresh.html?track=refresher">Начать с основ TypeScript</a><p class="resume-note">Прогресс сохраняется в этом браузере. Процент означает прочитанные главы, а не оценку знаний.</p></section><section><h2>Выберите маршрут</h2><div class="tracks">${tracks}</div></section><section class="overview"><h2>Все главы</h2><ol>${lessons.map((l) => `<li><a href="${l.href}"><span>${String(l.number).padStart(2, '0')}</span><strong>${escape(l.title)}</strong><span aria-hidden="true">›</span></a></li>`).join('')}</ol></section><section class="about"><h2>Как учиться</h2><p>Прежде чем читать Спойлер, проговорите решение. Затем напишите его руками. Проверьте ноль, пустой вход, повтор, неизвестную ошибку и другой порядок завершения. Вернитесь к объяснению, если тест выявил пробел.</p><p>Prev / Next следуют выбранному маршруту. Можно читать главы отдельно; исходный Markdown доступен в каждой главе. Кодовые фрагменты могут быть самостоятельными, намеренно ошибочными или требовать показанного контекста — об этом говорится рядом.</p><h2>Проверка навыка</h2><p><a href="14-workshop.html">Четыре упражнения</a>, <a href="10-mock-interview.html">mock interview</a> и <a href="docs/EVALUATION.md">отчёт оценки</a>. Тесты проверяют корректность примеров; отдельный эксперимент проверяет решения после чтения курса. Эти результаты имеют разные ограничения.</p><pre><code>npm ci\nnpm run verify\nnpm start</code></pre><p><a href="README.md">README и запуск</a> · <a href="examples/workshop.ts">Ответы практикума</a> · <a href="benchmarks/TASKS.md">Новые задачи для проверки</a> · <a href="docs/AUDIT.md">Аудит содержания</a></p><h2>Границы курса</h2><p>Основной фокус — язык, backend и работа с данными. React, DOM, decorators и разработка библиотек рассматриваются за пределами этого материала. Задания авторские; они не являются списком вопросов конкретной компании.</p></section>`,
+    'Тренинг для возвращения к TS',
+    `<section class="intro"><p class="context">Для разработчиков, которые возвращаются к TS</p><h1>Вспомнить язык.<br>Вернуться к практике.</h1><p class="lead">${lessons.length} глав: объяснение → код → задача → Спойлер. Восстановите язык, найдите пробелы и закрепите знания практикой.</p><p>Вы умеете программировать, но детали TS забылись? Найдите темы для повторения и восстановите навык на задачах из знакомой области.</p><a class="primary-link" id="resume-link" href="11-language-refresh.html?track=refresher">Начать с основ TypeScript</a> <a class="diagnostic-link" href="#diagnostic">Найти темы для повторения</a><p class="resume-note">Прогресс сохраняется в этом браузере. Процент означает прочитанные главы, а не оценку знаний.</p></section><section class="domain-picker"><h2>На каких задачах тренироваться?</h2>${domainSelector}<a class="primary-link" id="domain-practice-link" href="practice.html?domain=catalog">Практика в выбранной области</a><p>Выбор меняет практические задания. Общая программа TS одинакова для всех областей.</p></section>${diagnostic}<section><h2>Выберите маршрут</h2><div class="tracks">${tracks}</div></section><section class="overview"><h2>Все главы</h2><ol>${lessons.map((l) => `<li><a href="${l.href}"><span>${String(l.number).padStart(2, '0')}</span><strong>${escape(l.title)}</strong><span aria-hidden="true">›</span></a></li>`).join('')}</ol></section><section class="about"><h2>Как учиться</h2><p>Прежде чем читать Спойлер, проговорите решение. Затем напишите его руками. Проверьте ноль, пустой вход, повтор, неизвестную ошибку и другой порядок завершения. Вернитесь к объяснению, если тест выявил пробел.</p><p>Prev / Next следуют выбранному маршруту. Можно читать главы отдельно; исходный Markdown доступен в каждой главе. Кодовые фрагменты могут быть самостоятельными, намеренно ошибочными или требовать показанного контекста — об этом говорится рядом.</p><h2>Проверка навыка</h2><p><a href="14-workshop.html">Четыре упражнения</a>, <a href="10-mock-interview.html">mock interview</a> и <a href="docs/EVALUATION.md">отчёт оценки</a>. Тесты проверяют корректность примеров; отдельный эксперимент проверяет решения после чтения курса. Эти результаты имеют разные ограничения.</p><pre><code>npm ci\nnpm run verify\nnpm start</code></pre><p><a href="README.md">README и запуск</a> · <a href="examples/workshop.ts">Ответы практикума</a> · <a href="benchmarks/TASKS.md">Новые задачи для проверки</a> · <a href="docs/AUDIT.md">Аудит содержания</a></p><h2>Границы курса</h2><p>Основной фокус — язык, backend и работа с данными. React, DOM, decorators и разработка библиотек рассматриваются за пределами этого материала. Задания авторские; они не являются списком вопросов конкретной компании.</p></section>`,
   ),
 );
 console.log(`Built ${lessons.length} lessons, two tracks and dist/`);
