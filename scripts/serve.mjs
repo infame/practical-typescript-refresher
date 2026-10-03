@@ -14,6 +14,7 @@ const types = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.md': 'text/plain; charset=utf-8',
   '.ts': 'text/plain; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
@@ -22,7 +23,10 @@ const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
     const pathname = decodeURIComponent(url.pathname);
-    const file = path.resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
+    const file = path.resolve(
+      root,
+      '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname),
+    );
     const relative = path.relative(root, file);
     if (
       relative.startsWith('..') ||
@@ -47,7 +51,7 @@ const server = http.createServer(async (req, res) => {
     res.end(req.method === 'HEAD' ? undefined : body);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Страница не найдена');
+    res.end('Page not found');
   }
 });
 server.on('error', (error) => {

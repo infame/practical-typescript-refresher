@@ -1,0 +1,140 @@
+[
+  {
+    "topic": "Presencia",
+    "code": "const retries = 0;\nconst effective = retries || 3;",
+    "prompt": "¿Cuánto vale effective?",
+    "options": ["0", "3", "undefined"],
+    "answer": 1,
+    "explanation": "|| sustituye cualquier falsy, también cero. ?? solo sustituye null o undefined.",
+    "chapter": 2,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Entrada externa",
+    "code": "const value: unknown = null;",
+    "prompt": "¿Basta typeof value === \"object\" para acceder a campos?",
+    "options": ["Sí", "No: excluir null y validar campos"],
+    "answer": 1,
+    "explanation": "typeof null es object. unknown requiere evidencia runtime; as no valida ni convierte.",
+    "chapter": 3,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Inferencia",
+    "code": "const job = { status: \"queued\" };",
+    "prompt": "¿Qué tipo tiene job.status sin contexto?",
+    "options": ["Solo \"queued\"", "string", "unknown"],
+    "answer": 1,
+    "explanation": "La variable es const pero el campo es modificable y suele ampliarse a string. Anota el contrato del estado.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Campos opcionales",
+    "code": "type Patch = { name?: string };",
+    "prompt": "Con exactOptionalPropertyTypes, ¿se acepta { name: undefined }?",
+    "options": ["Sí", "No: incluir undefined explícitamente en el union"],
+    "answer": 1,
+    "explanation": "Ausencia y campo presente con undefined son estados distintos. Leer optional puede devolver undefined.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Readonly",
+    "code": "type State = Readonly<{ tags: string[] }>;",
+    "prompt": "¿State prohíbe state.tags.push(\"new\")?",
+    "options": ["Sí", "No: readonly es superficial"],
+    "answer": 1,
+    "explanation": "Readonly impide sustituir tags; el array necesita readonly string[] para impedir modificarlo mediante esa vista.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/object-types.html",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Relaciones genéricas",
+    "code": "function first<T>(xs: readonly T[]): T | undefined",
+    "prompt": "¿Qué conserva T?",
+    "options": [
+      "Relación entre elementos de entrada y resultado",
+      "Convierte todo resultado en any"
+    ],
+    "answer": 0,
+    "explanation": "El generic conecta elemento y resultado. Un array vacío no tiene primer elemento: el retorno incluye undefined.",
+    "chapter": 12,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/generics.html",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Identidad de objetos",
+    "code": "new Set([{ id: \"A\" }, { id: \"A\" }]).size",
+    "prompt": "¿Cuántos elementos quedan?",
+    "options": ["1", "2"],
+    "answer": 1,
+    "explanation": "Set compara identidad, no campos. Deduplica con claves ID elegidas o un Map.",
+    "chapter": 1,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Orden async",
+    "code": "await Promise.all([slow(), fast()])",
+    "prompt": "¿En qué orden devuelve resultados?",
+    "options": ["Orden de finalización", "Orden de promises de entrada"],
+    "answer": 1,
+    "explanation": "Promise.all conserva posiciones. Rechazar no cancela operaciones activas.",
+    "chapter": 4,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Concurrencia",
+    "code": "await Promise.all(items.map(load))",
+    "prompt": "¿Limita las cargas concurrentes a cuatro?",
+    "options": ["Sí", "No: un limiter debe controlar los inicios"],
+    "answer": 1,
+    "explanation": "map llama a load para todas las entradas. Limitar espera no equivale a limitar inicio.",
+    "chapter": 5,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Errores desconocidos",
+    "code": "try { run(); } catch (error) { /* … */ }",
+    "prompt": "¿Cómo obtener mensaje seguro en strict?",
+    "options": [
+      "error.message siempre existe",
+      "error instanceof Error ? error.message : String(error)"
+    ],
+    "answer": 1,
+    "explanation": "JS puede lanzar strings, null o undefined. Estrecha unknown antes de acceder a campos Error.",
+    "chapter": 9,
+    "url": "https://www.typescriptlang.org/tsconfig/useUnknownInCatchVariables.html",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Entrega de eventos",
+    "code": "{ eventId: \"E1\", entityId: \"A\" }",
+    "prompt": "¿Qué clave distingue replay de otro cambio de la misma entidad?",
+    "options": ["Solo entityId", "eventId dentro de su ámbito de unicidad"],
+    "answer": 1,
+    "explanation": "Una entidad tiene muchos eventos legítimos. Deduplicar entrega y seleccionar versión usan identidades distintas.",
+    "chapter": 7,
+    "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+    "source": "Referencia oficial"
+  },
+  {
+    "topic": "Ejecutar TS",
+    "code": "node example.ts",
+    "prompt": "¿Ejecutar correctamente garantiza ausencia de errores de tipos?",
+    "options": ["Sí", "No: ejecutar tsc aparte"],
+    "answer": 1,
+    "explanation": "Quitar tipos permite ejecutar sin typecheck. Ejecución y comprobación son pasos distintos.",
+    "chapter": 13,
+    "url": "https://nodejs.org/api/typescript.html",
+    "source": "Referencia oficial"
+  }
+]

@@ -1,18 +1,28 @@
 # Practical TypeScript Refresher
 
-[Read the course in your browser](https://infame.github.io/practical-typescript-refresher/)
-A practical refresher for developers who know programming and have forgotten the details of TypeScript. **Explanations → code → exercises → spoilers**, with tested implementations and a browser reader.
+[Open the training](https://infame.github.io/practical-typescript-refresher/) · [Русский](https://infame.github.io/practical-typescript-refresher/ru/) · [Español](https://infame.github.io/practical-typescript-refresher/es/)
 
-**The course is in Russian.** [Русский README](README.ru.md) · [Curriculum](course.json) · [Evaluation](docs/EVALUATION.md) · [Content audit](docs/AUDIT.md)
+For developers who know programming but have forgotten the details of TypeScript. **Find gaps → review explanations → write code → check your reasoning.** English is the default; all 14 chapters, the diagnostic and practice are also available in Russian and Spanish.
 
+[Русский README](README.ru.md) · [README en español](README.es.md) · [Curriculum](course.json) · [Evaluation](docs/EVALUATION.md) · [Content audit](docs/AUDIT.md)
 
 ## Find your gaps, then practice
 
-Start with the 12-question diagnostic: wrong or unknown answers produce a topic-by-topic revision plan with explanations, relevant chapters and official MDN / TypeScript / Node documentation. The score measures these answers, not coding competence. No account, analytics or uploaded answers.
+Start with 12 diagnostic questions. Wrong and unknown answers produce explanations, relevant chapters and official MDN / TypeScript / Node documentation. This score measures your answers, not coding competence. No account, analytics or uploaded answers.
 
-Choose one of four practice domains: product catalog, analytics events, background jobs or profile sync. Each has a different task and a spoiler walkthrough. Shared lessons cover the same TS fundamentals; changing the domain does not relabel every lesson. [Practice specifications](docs/DOMAIN-PRACTICE.md).
+Choose your domain at the top right: product catalog, analytics events, background jobs or profile sync. The same lessons and three practice contracts use the selected entity names and fields. Changing domains keeps your page, language and reading route. [Practice contracts and domain mapping](docs/DOMAIN-PRACTICE.md).
 
-If this refresher is useful, a GitHub star helps others discover it. Contributions that improve explanations, catch mistakes or add equivalent practice tasks are welcome.
+Search indexes explanations **and code**, including spoiler answers, and links to the matching section. Solutions stay collapsed until you open them, or follow a search result that matches their content. Chapter progress is saved locally and shared across languages.
+
+If this helps, a GitHub star makes the project easier to discover. Corrections, clearer explanations and reports of gaps are welcome.
+
+## Coverage
+
+Two reading paths: return to TS after a break, or rehearse practical backend coding. Prev / Next at both ends follow the selected route.
+
+The training covers inference, narrowing, practical generics, type design, JavaScript behavior, collections, concurrency, validation, ingestion and failure handling. SQL, durable events, BFS/DFS/heaps and Node tooling are introductions. React/DOM, framework APIs, security, system design, advanced dynamic programming and distributed transactions need separate preparation. The home page maps coverage to chapters.
+
+This is a refresher, not a comprehensive course or a guarantee of passing any interview. Exercises are original and independent of a particular employer.
 
 ## Start locally
 
@@ -24,48 +34,28 @@ npm run verify
 npm start
 ```
 
-Open http://127.0.0.1:4173. You can also open `dist/index.html` directly after building; use the local server for consistent cross-page progress storage.
+Open http://127.0.0.1:4173. Use `/ru/` or `/es/` for translations. Serve the built site over HTTP; the browser modules need a server.
 
-## Two reading paths
-
-- **Returning to TS:** language and inference → runtime pitfalls → narrowing → type design → tooling → data processing → async → practical exercises.
-- **Preparing for a coding interview:** collections → JS/TS → concurrency → ingestion → SQL → algorithms → review → workshop → mock interview.
-
-14 chapters cover the language, backend data processing and failure handling. React, DOM and advanced library authoring are outside this edition. These are original exercises, not a list of any company's interview questions.
-
-## What makes this useful
-
-- Explain why the code works before showing a solution.
-- Predict output, implement functions, diagnose bugs and check edge cases.
-- Read in the browser with syntax highlighting, chapter search, Prev / Next at both ends and local progress.
-- Run real implementations with strict TypeScript and deterministic tests.
-- Inspect a separate task-solving evaluation; successful example tests are not presented as proof of learning.
-
-## Verify your own work
+## Check your own work
 
 ```sh
 npm run check
 npm test
 npm run check:snippets
 npm run check:site
-```
-
-Study `lessons/*.md`. Try the workshop before reading `examples/workshop.ts`. For an independent submission, use [benchmark tasks](benchmarks/TASKS.md):
-
-```sh
 npm run eval -- /absolute/path/to/solution.ts
 ```
 
-The harness executes the submitted module on your machine. Use your own solution or code you have reviewed. Reading the benchmark checks before solving makes it a practice exercise rather than a blind evaluation.
+The evaluation harness runs the submitted module on your machine. Use your own or reviewed code. [Benchmark tasks](benchmarks/TASKS.md) are separate from the diagnostic; reading their checks first makes them practice rather than an unseen evaluation. Example tests and an LLM experiment do not prove human learning effectiveness.
 
 ## Edit and contribute
 
-Change Markdown, then run `npm run build`. The static site is generated into `dist/`; root HTML copies preserve local file links. A new numbered lesson automatically joins the full course; update `course.json` to include it in a reading path. See [CONTRIBUTING](CONTRIBUTING.md) for snippet checks and review criteria.
+English sources are in `lessons/en/`, Spanish in `lessons/es/`, Russian in `lessons/`. Shared practice, diagnostic questions and UI translations are in `content/`. Domain vocabulary is defined in `scripts/course-content.mjs`. Tested implementations are in `examples/`.
 
-CI verifies the course on Node 24. GitHub Pages has an opt-in manual workflow; publishing requires Pages configured to use GitHub Actions.
+Run `npm run build` after editing. The static site goes into `dist/`; root HTML copies preserve existing lesson filenames. Keep chapter IDs and section order consistent across languages and update `course.json` for route changes. See [CONTRIBUTING](CONTRIBUTING.md).
 
-Built with markdown-it, highlight.js and Node. No client CDN or framework required. Dependencies and versions are recorded in package-lock.json.
+CI verifies on Node 24. GitHub Pages uses a manual publishing workflow. Built with markdown-it, highlight.js and Node; no client CDN or framework. Dependency versions are recorded in package-lock.json.
 
 ## License
 
-MIT. The bundled syntax-highlighting stylesheet is from highlight.js (BSD-3-Clause); its attribution is included in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).
+MIT. The bundled highlight.js stylesheet is BSD-3-Clause; see [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES.md).

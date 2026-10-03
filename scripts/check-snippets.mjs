@@ -2,20 +2,31 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import MarkdownIt from 'markdown-it';
+import { domains, adaptDomain } from './course-content.mjs';
 const root = path.resolve(import.meta.dirname, '..');
 const out = path.join(root, 'work', 'snippets');
 await fs.mkdir(out, { recursive: true });
 const md = new MarkdownIt();
-const files = (await fs.readdir(path.join(root, 'lessons'))).filter((f) => f.endsWith('.md'));
+const files = (await fs.readdir(path.join(root, 'lessons'))).filter((f) => /^\d+.*\.md$/.test(f));
 const generated = [];
-for (const file of files) {
-  const source = await fs.readFile(path.join(root, 'lessons', file), 'utf8');
-  let count = 0;
-  for (const token of md.parse(source, {})) {
-    if (token.type === 'fence' && token.info.trim() === 'ts check') {
-      const target = path.join(out, `${file.replace('.md', '')}-${++count}.ts`);
-      await fs.writeFile(target, `export {};\n${token.content}`);
-      generated.push(target);
+for (const lang of ['en', 'ru', 'es']) {
+  for (const file of files) {
+    const source = await fs.readFile(
+      path.join(root, 'lessons', ...(lang === 'ru' ? [] : [lang]), file),
+      'utf8',
+    );
+    for (const domain of domains) {
+      let count = 0;
+      for (const token of md.parse(adaptDomain(source, domain), {})) {
+        if (token.type === 'fence' && token.info.trim() === 'ts check') {
+          const target = path.join(
+            out,
+            `${lang}-${domain.id}-${file.replace('.md', '')}-${++count}.ts`,
+          );
+          await fs.writeFile(target, `export {};\n${token.content}`);
+          generated.push(target);
+        }
+      }
     }
   }
 }

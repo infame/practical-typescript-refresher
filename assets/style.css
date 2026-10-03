@@ -408,12 +408,6 @@ button[aria-pressed='true'] {
 .storage-note {
   color: #8c391b;
 }
-@media (min-width: 1200px) {
-  .layout:has(.intro) {
-    grid-template-columns: 255px minmax(0, 780px);
-    padding-right: 248px;
-  }
-}
 @media (max-width: 1199px) {
   .layout {
     grid-template-columns: 225px minmax(0, 1fr);
@@ -572,18 +566,7 @@ button[aria-pressed='true'] {
   border-top: 1px solid var(--line);
   margin-top: 36px;
 }
-#domain-select {
-  display: block;
-  width: 100%;
-  max-width: 400px;
-  margin: 10px 0;
-  padding: 12px;
-  font: inherit;
-  color: var(--ink);
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 5px;
-}
+
 fieldset {
   border: 0;
   border-top: 1px solid var(--line);
@@ -641,4 +624,137 @@ legend {
   display: inline-block;
   padding: 12px 0;
   margin: 0 16px;
+}
+/* One consistent reader: global controls, full-text results, optional section links. */
+.layout {
+  grid-template-columns: 255px minmax(0, 820px);
+  max-width: 1200px;
+}
+.header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+.header-controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: var(--muted);
+  gap: 4px;
+}
+.header-controls select {
+  min-height: 38px;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  max-width: 240px;
+}
+.header-controls a {
+  font-size: 0.85rem;
+}
+.primary-nav {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+  font-size: 0.85rem;
+}
+.domain-vocabulary {
+  padding: 14px 18px;
+  background: var(--canvas);
+  border-left: 3px solid var(--blue);
+  margin: 20px 0;
+}
+.domain-vocabulary p {
+  margin: 6px 0;
+  font-size: 0.9rem;
+}
+.domain-vocabulary small {
+  color: var(--muted);
+}
+.section-nav {
+  margin: 20px 0;
+  font-size: 0.9rem;
+}
+.section-nav nav {
+  display: grid;
+  gap: 8px;
+  padding: 16px 0;
+}
+.section-nav summary,
+.solution summary {
+  cursor: pointer;
+  color: var(--blue);
+}
+.solution {
+  margin: 24px 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.solution summary {
+  padding: 16px;
+  font-weight: 650;
+}
+.solution .answer {
+  padding: 0 16px 16px;
+}
+.search-result {
+  margin: 18px 0;
+}
+.search-result a {
+  display: block;
+  font-size: 0.85rem;
+}
+.search-result small {
+  display: block;
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+}
+#search-results {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+#search-results > p {
+  font-size: 0.8rem;
+}
+.journey li {
+  padding-left: 8px;
+}
+#scope table {
+  width: 100%;
+}
+#scope td {
+  vertical-align: top;
+}
+.practice-prerequisites {
+  margin-bottom: 24px;
+}
+@media (max-width: 760px) {
+  .site-header {
+    display: block;
+    padding: 18px;
+  }
+  .header-controls {
+    margin-top: 16px;
+    gap: 12px;
+  }
+  .header-controls select {
+    max-width: 190px;
+  }
+  .layout {
+    display: block;
+    padding: 20px 18px 48px;
+  }
+  .domain-vocabulary {
+    padding: 12px;
+  }
+  .solution .answer {
+    padding: 0 12px 12px;
+  }
 }

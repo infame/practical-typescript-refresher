@@ -1,13 +1,15 @@
 # Contributing
 
-Explanations and lessons are in Russian. Keep the focus on experienced developers returning to TypeScript and practical backend coding.
+Focus on experienced developers returning to TypeScript and practical backend coding. English is the default; Russian and Spanish are complete editions.
 
-1. State the contract before the solution: order, mutation, missing values, failure behavior and input assumptions.
-2. Explain why the algorithm works and give a case that breaks a plausible incorrect implementation.
-3. Put exercise answers under a `### Спойлер` heading.
-4. For an independent compilable snippet, use a `ts check` code fence. Include every type/dependency it needs. Deliberate compile errors must use @ts-expect-error and explain why.
-5. Full implementations go in examples/ with behavior tests. Do not use a mock to claim guarantees of a real database or network.
-6. Add new numbered Markdown lessons and update reading paths in course.json. IDs and existing URLs should remain stable.
-7. Run `npm run verify`. Describe changes to evaluation inputs and do not reuse an exposed task as an unseen learning benchmark.
+1. State the contract before the solution: order, mutation, missing values, failures and input assumptions.
+2. Explain why the algorithm works and show a case that breaks a plausible wrong implementation.
+3. Put exercise answers under `### Spoiler` (English/Spanish) or `### Спойлер` (Russian). The reader renders closed disclosures; do not put chapter navigation inside answers.
+4. Use a `ts check` fence for an independent compilable snippet. Include dependencies; intentional errors need explained `@ts-expect-error`. Verification compiles all three languages across all four domain substitutions.
+5. Put reusable implementations in `examples/` with behavior tests. Do not claim real network or database guarantees from a mock.
+6. Update `lessons/en/`, `lessons/es/` and Russian `lessons/` together. Preserve chapter IDs, section order and URLs. Update `course.json` for route changes.
+7. Practice contracts live in `content/practice.<language>.md`; keep rules equivalent. Domain substitutions in `scripts/course-content.mjs` must preserve algorithm behavior. Numeric fields in the shared exercise intentionally use a simplified contract, not every business rule of a real domain.
+8. Localize visible strings in `content/ui.json` and diagnostic content in `content/questions.<language>.json`.
+9. Run `npm run verify`, then check navigation, search, diagnostics, language/domain switching and a narrow viewport in a browser.
 
-Report a content issue with chapter/section, the confusing statement, expected interpretation and, when possible, a minimal example. Avoid claims that a passing LLM experiment proves human learning effectiveness.
+Report issues with language, domain, chapter/section and a minimal example. Describe changes to evaluation inputs; exposed tasks are not unseen learning benchmarks. Do not equate a quiz score, chapter completion, example tests or an LLM experiment with demonstrated human learning.

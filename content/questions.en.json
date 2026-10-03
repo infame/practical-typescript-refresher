@@ -1,0 +1,140 @@
+[
+  {
+    "topic": "Presence",
+    "code": "const retries = 0;\nconst effective = retries || 3;",
+    "prompt": "What is effective?",
+    "options": ["0", "3", "undefined"],
+    "answer": 1,
+    "explanation": "|| replaces every falsy value, including zero. Use ?? when only null and undefined should be replaced.",
+    "chapter": 2,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing",
+    "source": "Official reference"
+  },
+  {
+    "topic": "External input",
+    "code": "const value: unknown = null;",
+    "prompt": "Is typeof value === \"object\" sufficient to access fields?",
+    "options": ["Yes", "No: exclude null and validate fields"],
+    "answer": 1,
+    "explanation": "typeof null is object. unknown needs runtime evidence; as neither validates nor converts.",
+    "chapter": 3,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Inference",
+    "code": "const job = { status: \"queued\" };",
+    "prompt": "What is the type of job.status without contextual typing?",
+    "options": ["Only \"queued\"", "string", "unknown"],
+    "answer": 1,
+    "explanation": "The binding is const but the property is mutable and usually widens to string. Annotate the state contract.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Optional properties",
+    "code": "type Patch = { name?: string };",
+    "prompt": "With exactOptionalPropertyTypes, is { name: undefined } accepted?",
+    "options": ["Yes", "No: include undefined explicitly in the value union"],
+    "answer": 1,
+    "explanation": "Absence differs from a present property containing undefined. Reading an optional property can still yield undefined.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Readonly",
+    "code": "type State = Readonly<{ tags: string[] }>;",
+    "prompt": "Does State prohibit state.tags.push(\"new\")?",
+    "options": ["Yes", "No: readonly is shallow"],
+    "answer": 1,
+    "explanation": "Readonly prevents replacing tags, but the nested array needs readonly string[] to prohibit mutation through that view.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/object-types.html",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Generic relationships",
+    "code": "function first<T>(xs: readonly T[]): T | undefined",
+    "prompt": "What does T preserve?",
+    "options": [
+      "The relationship between input elements and output",
+      "It turns every result into any"
+    ],
+    "answer": 0,
+    "explanation": "The generic links element and result types. An empty array has no first element, so the return type includes undefined.",
+    "chapter": 12,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/generics.html",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Object identity",
+    "code": "new Set([{ id: \"A\" }, { id: \"A\" }]).size",
+    "prompt": "How many elements remain?",
+    "options": ["1", "2"],
+    "answer": 1,
+    "explanation": "Set compares object identity, not fields. Deduplicate by a chosen ID with a Set of keys or a Map.",
+    "chapter": 1,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Async order",
+    "code": "await Promise.all([slow(), fast()])",
+    "prompt": "In what order are results returned?",
+    "options": ["Completion order", "Input promise order"],
+    "answer": 1,
+    "explanation": "Promise.all keeps input positions. A rejection does not cancel other operations already running.",
+    "chapter": 4,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Concurrency",
+    "code": "await Promise.all(items.map(load))",
+    "prompt": "Does this limit concurrent loads to four?",
+    "options": ["Yes", "No: a limiter must control starting work"],
+    "answer": 1,
+    "explanation": "map calls load for all items immediately. Limiting waits is not the same as limiting starts.",
+    "chapter": 5,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Unknown errors",
+    "code": "try { run(); } catch (error) { /* … */ }",
+    "prompt": "How can strict code safely obtain a message?",
+    "options": [
+      "error.message is always available",
+      "error instanceof Error ? error.message : String(error)"
+    ],
+    "answer": 1,
+    "explanation": "JavaScript can throw strings, null or undefined. Narrow unknown before accessing Error properties.",
+    "chapter": 9,
+    "url": "https://www.typescriptlang.org/tsconfig/useUnknownInCatchVariables.html",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Event delivery",
+    "code": "{ eventId: \"E1\", entityId: \"A\" }",
+    "prompt": "Which key distinguishes replay from another update to the same entity?",
+    "options": ["Only entityId", "eventId within its declared uniqueness scope"],
+    "answer": 1,
+    "explanation": "Entities have many legitimate events. Delivery deduplication and latest-version selection use different identities.",
+    "chapter": 7,
+    "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+    "source": "Official reference"
+  },
+  {
+    "topic": "Running TS",
+    "code": "node example.ts",
+    "prompt": "Does successful execution guarantee no type errors?",
+    "options": ["Yes", "No: run a separate tsc check"],
+    "answer": 1,
+    "explanation": "Type stripping executes supported syntax without typechecking. Running code and checking types are different steps.",
+    "chapter": 13,
+    "url": "https://nodejs.org/api/typescript.html",
+    "source": "Official reference"
+  }
+]

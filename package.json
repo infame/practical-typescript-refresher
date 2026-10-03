@@ -11,7 +11,7 @@
     "check:site": "node scripts/check-site.mjs",
     "verify": "npm run check && npm test && npm run check:snippets && npm run build && npm run check:site",
     "eval": "node benchmarks/evaluate.mjs",
-    "format": "prettier --write assets/style.css assets/app.js assets/training.js scripts examples benchmarks course.json training.json package.json tsconfig.json .github/workflows"
+    "format": "prettier --write assets/*.css assets/*.js assets/*.mjs scripts examples benchmarks content lessons course.json package.json tsconfig.json .github/workflows"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
@@ -20,7 +20,7 @@
     "prettier": "^3.9.9",
     "typescript": "^7.0.2"
   },
-  "description": "A Russian practical TypeScript refresher with explanations, exercises, tested examples and a static reader.",
+  "description": "Practical TypeScript refresher: find gaps, review explanations and write code. English, Russian and Spanish.",
   "license": "MIT",
   "engines": {
     "node": ">=24"
@@ -31,6 +31,6 @@
     "refresher",
     "backend",
     "interview",
-    "russian"
+    "practice"
   ]
 }

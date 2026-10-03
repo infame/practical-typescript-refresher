@@ -1,186 +1,235 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import MarkdownIt from 'markdown-it';
-import hljs from 'highlight.js';
+import { domains, adaptDomain, escape, renderContent } from './course-content.mjs';
 
-const root = path.resolve(import.meta.dirname, '..');
-const dist = path.join(root, 'dist');
+const root = path.resolve(import.meta.dirname, '..'),
+  dist = path.join(root, 'dist');
 const config = JSON.parse(await fs.readFile(path.join(root, 'course.json'), 'utf8'));
-const training = JSON.parse(await fs.readFile(path.join(root, 'training.json'), 'utf8'));
-const escape = (value) =>
-  String(value).replace(
-    /[&<>"']/g,
-    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char],
-  );
-const md = new MarkdownIt({
-  html: false,
-  linkify: true,
-  highlight(code, info) {
-    const language = info.split(/\s+/)[0];
-    return language && hljs.getLanguage(language)
-      ? hljs.highlight(code, { language }).value
-      : escape(code);
-  },
-});
+const translations = JSON.parse(await fs.readFile(path.join(root, 'content/ui.json'), 'utf8'));
 const files = (await fs.readdir(path.join(root, 'lessons')))
-  .filter((file) => file.endsWith('.md'))
+  .filter((f) => /^\d+.*\.md$/.test(f))
   .sort();
-const lessons = await Promise.all(
-  files.map(async (file) => {
-    const source = await fs.readFile(path.join(root, 'lessons', file), 'utf8');
-    const title = source.match(/^# (.+)$/m)?.[1];
-    const number = Number(file.split('-')[0]);
-    if (!title || !Number.isInteger(number)) throw new Error(`Invalid lesson: ${file}`);
-    return {
-      file,
-      title,
-      number,
-      id: file.replace('.md', ''),
-      href: file.replace('.md', '.html'),
-      source,
-    };
-  }),
-);
-if (new Set(lessons.map((l) => l.number)).size !== lessons.length)
-  throw new Error('Duplicate chapter number');
-for (const track of Object.values(config.tracks)) {
-  if (
-    new Set(track.chapters).size !== track.chapters.length ||
-    track.chapters.some((n) => !lessons.some((l) => l.number === n))
-  ) {
-    throw new Error('Invalid track');
-  }
-}
-for (const question of training.questions) {
-  if (
-    !Number.isInteger(question.answer) ||
-    question.answer < 0 ||
-    question.answer >= question.options.length ||
-    !lessons.some((l) => l.number === question.chapter) ||
-    !question.url.startsWith('https://')
-  )
-    throw new Error('Invalid diagnostic question');
-}
-if (new Set(training.domains.map((d) => d.id)).size !== training.domains.length)
-  throw new Error('Duplicate domain');
-for (const domain of training.domains) {
-  if (
-    !/^[a-z]+$/.test(domain.id) ||
-    domain.chapters.some((n) => !lessons.some((l) => l.number === n))
-  )
-    throw new Error('Invalid domain');
-}
-const publicConfig = {
-  title: config.title,
-  tracks: config.tracks,
-  training,
-  lessons: lessons.map(({ source, ...lesson }) => lesson),
-};
+await fs.rm(dist, { recursive: true, force: true });
 await fs.mkdir(dist, { recursive: true });
 await fs.copyFile(
   path.join(root, 'node_modules/highlight.js/styles/github.css'),
   path.join(root, 'assets/highlight.css'),
 );
-await fs.writeFile(
-  path.join(root, 'assets/course.js'),
-  `window.COURSE = ${JSON.stringify(publicConfig)};\n`,
-);
-for (const directory of ['assets', 'lessons', 'examples', 'docs']) {
-  await fs.cp(path.join(root, directory), path.join(dist, directory), { recursive: true });
-}
-for (const file of [
+for (const dir of ['assets', 'lessons', 'examples', 'docs', 'content'])
+  await fs.cp(path.join(root, dir), path.join(dist, dir), { recursive: true });
+for (const f of [
   'README.md',
   'README.ru.md',
+  'README.es.md',
   'CONTRIBUTING.md',
   'LICENSE',
   'THIRD_PARTY_NOTICES.md',
 ])
-  await fs.copyFile(path.join(root, file), path.join(dist, file));
-await fs.mkdir(path.join(dist, 'benchmarks'), { recursive: true });
+  await fs.copyFile(path.join(root, f), path.join(dist, f));
+await fs.mkdir(path.join(dist, 'benchmarks'));
 await fs.copyFile(path.join(root, 'benchmarks/TASKS.md'), path.join(dist, 'benchmarks/TASKS.md'));
-
-function pager(index, location) {
-  const prev = lessons[index - 1];
-  const next = lessons[index + 1];
-  return `<nav class="pager" aria-label="Навигация ${location}"><a class="prev" data-prev href="${prev?.href || 'index.html'}"><span>‹ Prev</span><small>${escape(prev?.title || 'Оглавление')}</small></a><span class="page-count">${index + 1} / ${lessons.length}</span><a class="next" data-next href="${next?.href || 'index.html'}"><span>${next ? 'Next ›' : 'К оглавлению ›'}</span><small>${escape(next?.title || 'Курс завершён')}</small></a></nav>`;
-}
-function shell(title, content, current = 0, toc = []) {
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(config.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${escape(config.title)}</title><link rel="stylesheet" href="assets/highlight.css"><link rel="stylesheet" href="assets/style.css"><script src="assets/course.js" defer></script><script src="assets/app.js" defer></script><script src="assets/training.js" defer></script></head><body data-lesson="${current}"><a class="skip" href="#content">К содержанию</a><header class="site-header"><a class="brand" href="index.html">${escape(config.title)}</a><span>${escape(config.description)}</span></header><div class="layout"><aside><details class="course-menu" open><summary>Оглавление курса</summary><label class="search-label" for="chapter-search">Найти главу</label><input id="chapter-search" type="search" placeholder="Типы, async, parser…" autocomplete="off"><div class="progress-box"><p id="progress-label" aria-live="polite">Пройдено 0 из ${lessons.length} глав · 0%</p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><small id="progress-scope">По завершённым главам</small><p class="storage-note" hidden>Браузер не сохраняет прогресс. Откройте курс через локальный сервер.</p></div><ol class="chapters">${lessons.map((l) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${l.number}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol><p id="search-empty" hidden>Главы не найдены.</p></details></aside><main id="content" tabindex="-1">${content}</main>${toc.length ? `<nav class="local-toc" aria-label="В этой главе"><strong>В этой главе</strong>${toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>` : ''}</div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">Исходники и обсуждение на GitHub</a> · Объяснения и задания авторские. Исходники — Markdown; проверки — TypeScript и Node.</footer></body></html>`;
-}
-async function output(file, html) {
-  // Root copies keep previously shared local/file links working. Pages uses dist only.
-  await fs.writeFile(path.join(root, file), html);
-  await fs.writeFile(path.join(dist, file), html);
-}
-for (const [index, lesson] of lessons.entries()) {
-  const tokens = md.parse(lesson.source, {});
-  const toc = [];
-  let section = 0;
-  for (const [i, token] of tokens.entries()) {
-    if (token.type === 'heading_open' && token.tag === 'h2') {
-      const id = `section-${++section}`;
-      token.attrSet('id', id);
-      toc.push({ id, title: tokens[i + 1].content });
-    }
-    if (token.type === 'heading_open' && token.tag === 'h3' && tokens[i + 1]?.content === 'Спойлер')
-      token.attrSet('class', 'spoiler-heading');
-    if (token.type === 'link_open') {
-      const href = token.attrGet('href');
-      if (href?.startsWith('../docs/')) token.attrSet('href', href.slice(3));
-    }
-  }
-  const html = md.renderer.render(tokens, md.options, {});
-  await output(
-    lesson.href,
-    shell(
-      lesson.title,
-      `${pager(index, 'сверху')}<div class="lesson-meta"><span>Глава ${lesson.number} из ${lessons.length}</span><a href="lessons/${lesson.file}">Markdown ↗</a></div><p class="route-label" id="route-label" hidden></p><article>${html}</article><div class="completion"><button type="button" id="complete-button" aria-pressed="false">Отметить главу пройденной</button><span id="completion-status" aria-live="polite"></span></div>${pager(index, 'снизу')}`,
-      lesson.number,
-      toc,
-    ),
+const scopes = {
+  en: [
+    ['Types, inference, narrowing and practical generics', '11, 3, 12'],
+    ['Collections, concurrency, ingestion and failure reports', '1, 4, 5, 6, 14'],
+    [
+      'SQL, durable delivery, BFS/DFS/heaps and Node runtime',
+      '7, 8, 13 — introductions; not full specialist courses',
+    ],
+    [
+      'React/DOM, framework APIs, authentication/security, system design, advanced DP and distributed transactions',
+      'Separate preparation',
+    ],
+  ],
+  ru: [
+    ['Типы, вывод, narrowing и практические generics', '11, 3, 12'],
+    ['Коллекции, конкурентность, загрузка и отчёты об ошибках', '1, 4, 5, 6, 14'],
+    [
+      'SQL, durable delivery, BFS/DFS/heaps и Node runtime',
+      '7, 8, 13 — введение, не полноценные специализированные курсы',
+    ],
+    [
+      'React/DOM, API фреймворков, авторизация/безопасность, system design, сложная DP и распределённые транзакции',
+      'Отдельная подготовка',
+    ],
+  ],
+  es: [
+    ['Tipos, inferencia, narrowing y generics prácticos', '11, 3, 12'],
+    ['Colecciones, concurrencia, carga e informes de fallos', '1, 4, 5, 6, 14'],
+    [
+      'SQL, entrega duradera, BFS/DFS/heaps y runtime Node',
+      '7, 8, 13 — introducciones, no cursos especializados completos',
+    ],
+    [
+      'React/DOM, frameworks, autenticación/seguridad, system design, DP avanzada y transacciones distribuidas',
+      'Preparación por separado',
+    ],
+  ],
+};
+for (const lang of ['en', 'ru', 'es']) {
+  const ui = translations[lang],
+    base = lang === 'en' ? '' : '../',
+    directory = lang === 'en' ? dist : path.join(dist, lang);
+  await fs.mkdir(directory, { recursive: true });
+  const lessons = await Promise.all(
+    files.map(async (file) => {
+      const sourcePath = lang === 'ru' ? `lessons/${file}` : `lessons/${lang}/${file}`;
+      const source = await fs.readFile(path.join(root, sourcePath), 'utf8');
+      const title = source.match(/^# (.+)$/m)[1],
+        number = Number(file.slice(0, 2));
+      return {
+        number,
+        id: file.slice(0, -3),
+        file,
+        href: file.replace('.md', '.html'),
+        title,
+        sourcePath,
+        source,
+      };
+    }),
   );
-}
-const domainSelector = `<label for="domain-select">Предметная область</label><select id="domain-select">${training.domains.map((d) => `<option value="${d.id}">${escape(d.title)}</option>`).join('')}</select><p id="domain-summary">${escape(training.domains[0].summary)}</p>`;
-const diagnostic = `<section id="diagnostic"><h2>Что стоит освежить?</h2><p>12 коротких вопросов на 5–10 минут. Выберите «Не знаю», если не можете объяснить ответ. После проверки получите темы для повторения, разборы и ссылки на официальные справочники. Это ориентир для самостоятельной практики; результат выбора ответа ещё не означает, что вы сможете написать решение.</p><details><summary>Начать диагностику</summary><form id="diagnostic-form">${training.questions.map((q, i) => `<fieldset><legend>${i + 1}. ${escape(q.topic)}</legend><pre><code>${hljs.highlight(q.code, { language: 'typescript' }).value}</code></pre><p>${escape(q.prompt)}</p>${[...q.options, 'Не знаю'].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}"> ${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit">Показать темы для повторения</button><button type="reset" class="secondary-button">Пройти заново</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
-await output(
-  'practice.html',
-  shell(
-    'Практика в выбранной области',
-    `<h1>Одна база TS, разные задачи</h1><p>Выберите область и напишите решение до чтения Спойлера. Здесь меняются условия задачи; общие главы объясняют те же инструменты TypeScript.</p>${domainSelector}${training.domains
+  const byNumber = new Map(lessons.map((l) => [l.number, l]));
+  for (const track of Object.values(config.tracks))
+    if (track.chapters.some((n) => !byNumber.has(n))) throw new Error('Invalid route');
+  const routeIds = config.tracks.refresher.chapters;
+  const ordered = routeIds.map((n) => byNumber.get(n));
+  const questions = JSON.parse(
+    await fs.readFile(path.join(root, `content/questions.${lang}.json`), 'utf8'),
+  );
+  for (const q of questions)
+    if (
+      !byNumber.has(q.chapter) ||
+      !Number.isInteger(q.answer) ||
+      q.answer < 0 ||
+      q.answer >= q.options.length
+    )
+      throw new Error('Invalid question');
+  const practiceSource = await fs.readFile(path.join(root, `content/practice.${lang}.md`), 'utf8');
+  const pages = {},
+    search = {};
+  for (const domain of domains) {
+    pages[domain.id] = {};
+    search[domain.id] = [];
+    for (const lesson of lessons) {
+      const rendered = renderContent(adaptDomain(lesson.source, domain), ui.solution);
+      pages[domain.id][lesson.id] = rendered;
+      search[domain.id].push(
+        ...rendered.sections.map((s) => ({
+          ...s,
+          lessonTitle: lesson.title,
+          href: lesson.href,
+          chapter: lesson.number,
+        })),
+      );
+    }
+    const rendered = renderContent(
+      adaptDomain(practiceSource.replace(/^# .+\n/, ''), domain),
+      ui.solution,
+    );
+    pages[domain.id].practice = rendered;
+    search[domain.id].push(
+      ...rendered.sections.map((s) => ({
+        ...s,
+        lessonTitle: ui.practice,
+        href: 'practice.html',
+        chapter: 0,
+      })),
+    );
+  }
+  const publicData = {
+    lang,
+    base,
+    ui,
+    domains,
+    questions,
+    lessons: lessons.map(({ source, ...l }) => l),
+    tracks: config.tracks,
+    pages,
+    search,
+  };
+  await fs.writeFile(
+    path.join(dist, `assets/course-${lang}.js`),
+    `window.COURSE=${JSON.stringify(publicData)};\n`,
+  );
+  const start = byNumber.get(routeIds[0]);
+  function shell(title, body, lesson = null) {
+    const current = lesson?.number || 0;
+    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css"><link rel="stylesheet" href="${base}assets/style.css"><script src="${base}assets/course-${lang}.js" defer></script><script src="${base}assets/app.js" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select">${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select">${[
+      ['en', 'English'],
+      ['ru', 'Русский'],
+      ['es', 'Español'],
+    ]
       .map(
-        (d) =>
-          `<article data-domain="${d.id}">${md.render(d.task)}<h3>Что повторить</h3><ul>${d.chapters
-            .map((n) => {
-              const l = lessons.find((l) => l.number === n);
-              return `<li><a href="${l.href}">${escape(l.title)}</a></li>`;
-            })
-            .join('')}</ul></article>`,
+        ([code, name]) =>
+          `<option value="${code}" ${code === lang ? 'selected' : ''}>${name}</option>`,
       )
       .join(
         '',
-      )}<p><a href="index.html#diagnostic">Найти темы для повторения</a> · <a href="docs/DOMAIN-PRACTICE.md">Условия и разборы в Markdown</a></p>`,
-  ),
+      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="practice.html">${ui.practice}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><p class="storage-note" hidden>${lang === 'en' ? 'Progress cannot be saved in this browser.' : lang === 'ru' ? 'Браузер не сохраняет прогресс.' : 'El navegador no guarda progreso.'}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
+  }
+  async function output(file, html) {
+    await fs.writeFile(path.join(directory, file), html);
+    if (lang === 'en') await fs.writeFile(path.join(root, file), html);
+  }
+  function pager(lesson, location) {
+    const index = ordered.findIndex((l) => l.number === lesson.number),
+      prev = ordered[index - 1],
+      next = ordered[index + 1];
+    return `<nav class="pager" aria-label="${ui.navigation}"><a data-prev href="${prev?.href || 'index.html'}"><span>‹ ${ui.prev}</span><small>${escape(prev?.title || ui.home)}</small></a><span class="page-count">${index + 1} / ${lessons.length}</span><a data-next href="${next?.href || 'practice.html'}"><span>${ui.next} ›</span><small>${escape(next?.title || ui.practice)}</small></a></nav>`;
+  }
+  function vocabulary() {
+    return `<section class="domain-vocabulary"><strong>${ui.domainModel}: <span id="domain-name">${ui.catalog}</span></strong><p>${ui.entity}: <code id="domain-entity">Product</code> · ID: <code id="domain-id">productId</code> · ${ui.metric}: <code id="domain-metric">price</code></p><small>${ui.terms}</small></section>`;
+  }
+  function toc(rendered) {
+    return `<nav class="local-toc" aria-label="${ui.inChapter}"><strong>${ui.inChapter}</strong>${rendered.toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>`;
+  }
+  for (const lesson of lessons) {
+    const rendered = pages.catalog[lesson.id];
+    const page = shell(
+      lesson.title,
+      `${pager(lesson, 'top')}<div class="lesson-meta"><span id="route-label">${ui.routeRefresh}</span><a href="${base + lesson.sourcePath}" id="markdown-link">${ui.markdown}</a></div>${vocabulary()}<div id="lesson-toc">${toc(rendered)}</div><article id="lesson-article">${rendered.html}</article><div class="completion"><button id="complete-button" type="button" aria-pressed="false">${ui.mark}</button><span id="completion-status">${ui.tryFirst}</span></div>${pager(lesson, 'bottom')}<p><a href="practice.html">${ui.practiceNext}</a></p>`,
+      lesson,
+    );
+    await output(lesson.href, page);
+  }
+  const pract = pages.catalog.practice;
+  await output(
+    'practice.html',
+    shell(
+      ui.practice,
+      `<h1>${ui.practice}</h1><p>${ui.practiceIntro}</p>${vocabulary()}<section class="practice-prerequisites"><h2>${ui.prerequisites}</h2><p>${[3, 1, 5, 9].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p></section><article id="lesson-article">${pract.html}</article><p><a href="${base}content/practice.${lang}.md">${ui.markdown}</a> · <a href="${base}examples/training-core.ts">TypeScript</a></p><a class="primary-link" href="${byNumber.get(10).href}">${escape(byNumber.get(10).title)}</a>`,
+    ),
+  );
+  const quiz = `<section id="diagnostic"><h2>${ui.diagnostic}</h2><p>${lang === 'en' ? '12 questions, about 5–10 minutes. Choose “I don’t know” when unsure. Your answers stay in this browser tab; correct guesses do not demonstrate independent coding.' : lang === 'ru' ? '12 вопросов на 5–10 минут. При неуверенности выбирайте «Не знаю». Ответы остаются в этой вкладке; правильный выбор не доказывает умение написать код.' : '12 preguntas, unos 5–10 minutos. Elige «No lo sé» si dudas. Las respuestas quedan en esta pestaña; acertar no demuestra programación independiente.'}</p><details><summary>${ui.startDiagnostic}</summary><form id="diagnostic-form">${questions.map((q, i) => `<fieldset><legend>${i + 1}. ${escape(q.topic)}</legend>${renderContent('```ts\n' + q.code + '\n```', ui.solution).html}<p>${escape(q.prompt)}</p>${[...q.options, ui.unknown].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}">${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit">${ui.showGaps}</button><button type="reset" class="secondary-button">${ui.reset}</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
+  const scope = `<section id="scope"><h2>${ui.scope}</h2><p>${ui.scopeIntro}</p><table><thead><tr><th>${ui.trained}</th><th>${ui.sources}</th></tr></thead><tbody>${scopes[
+    lang
+  ]
+    .slice(0, 2)
+    .map(
+      ([a, b]) =>
+        `<tr><td>${a}</td><td>${b
+          .split(',')
+          .map((n) => byNumber.get(Number(n.trim())))
+          .map((l) => `<a href="${l.href}">${escape(l.title)}</a>`)
+          .join(' · ')}</td></tr>`,
+    )
+    .join(
+      '',
+    )}</tbody></table><h3>${ui.introduced}</h3><p>${scopes[lang][2][0]}. ${[7, 8, 13].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p><h3>${ui.outside}</h3><p>${scopes[lang][3][0]}</p><p><a href="https://www.typescriptlang.org/docs/handbook/intro.html">TypeScript Handbook</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">MDN JavaScript</a> · <a href="https://nodejs.org/api/">Node.js</a></p></section>`;
+  const tracks = ['refresher', 'interview']
+    .map(
+      (key) =>
+        `<section class="track"><h3>${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</h3><p>${key === 'refresher' ? ui.routeRefreshDesc : ui.routeInterviewDesc}</p><a class="primary-link" href="${byNumber.get(config.tracks[key].chapters[0]).href}?track=${key}">${ui.startRoute}</a></section>`,
+    )
+    .join('');
+  await output(
+    'index.html',
+    shell(
+      ui.home,
+      `<section class="intro"><h1>${ui.hero.split('\n').join('<br>')}</h1><p class="lead">${ui.intro}</p><a class="primary-link" href="#diagnostic">${ui.diagnostic}</a> <a id="resume-link" href="${start.href}">${ui.start}</a><p>${ui.domainNote}</p></section><section class="journey"><h2>${ui.journey}</h2><ol>${[ui.journey1, ui.journey2, ui.journey3, ui.journey4].map((s) => `<li>${s.replace(/^\d\. /, '')}</li>`).join('')}</ol></section>${quiz}<section><h2>${ui.route}</h2><div class="tracks">${tracks}</div></section><section><h2>${ui.practice}</h2><p>${ui.practiceIntro}</p><a class="primary-link" href="practice.html" id="domain-practice-link">${ui.practiceNext}</a></section>${scope}`,
+    ),
+  );
+}
+console.log(
+  `Built 3 languages × ${files.length + 2} pages; 4 domain variants; section-level content indexes.`,
 );
-await fs.writeFile(
-  path.join(root, 'docs/DOMAIN-PRACTICE.md'),
-  '# Практика по предметным областям\n\n' +
-    training.domains.map((d) => '# ' + d.title + '\n\n' + d.task).join('\n\n'),
-);
-await fs.copyFile(
-  path.join(root, 'docs/DOMAIN-PRACTICE.md'),
-  path.join(dist, 'docs/DOMAIN-PRACTICE.md'),
-);
-const tracks = Object.entries(config.tracks)
-  .map(([key, track]) => {
-    const first = lessons.find((l) => l.number === track.chapters[0]);
-    return `<section class="track"><h3>${escape(track.title)}</h3><p>${escape(track.description)}</p><p>${track.chapters.length} глав · В своём темпе</p><a class="primary-link" href="${first.href}?track=${key}">Начать маршрут</a></section>`;
-  })
-  .join('');
-await output(
-  'index.html',
-  shell(
-    'Тренинг для возвращения к TS',
-    `<section class="intro"><p class="context">Для разработчиков, которые возвращаются к TS</p><h1>Вспомнить язык.<br>Вернуться к практике.</h1><p class="lead">${lessons.length} глав: объяснение → код → задача → Спойлер. Восстановите язык, найдите пробелы и закрепите знания практикой.</p><p>Вы умеете программировать, но детали TS забылись? Найдите темы для повторения и восстановите навык на задачах из знакомой области.</p><a class="primary-link" id="resume-link" href="11-language-refresh.html?track=refresher">Начать с основ TypeScript</a> <a class="diagnostic-link" href="#diagnostic">Найти темы для повторения</a><p class="resume-note">Прогресс сохраняется в этом браузере. Процент означает прочитанные главы, а не оценку знаний.</p></section><section class="domain-picker"><h2>На каких задачах тренироваться?</h2>${domainSelector}<a class="primary-link" id="domain-practice-link" href="practice.html?domain=catalog">Практика в выбранной области</a><p>Выбор меняет практические задания. Общая программа TS одинакова для всех областей.</p></section>${diagnostic}<section><h2>Выберите маршрут</h2><div class="tracks">${tracks}</div></section><section class="overview"><h2>Все главы</h2><ol>${lessons.map((l) => `<li><a href="${l.href}"><span>${String(l.number).padStart(2, '0')}</span><strong>${escape(l.title)}</strong><span aria-hidden="true">›</span></a></li>`).join('')}</ol></section><section class="about"><h2>Как учиться</h2><p>Прежде чем читать Спойлер, проговорите решение. Затем напишите его руками. Проверьте ноль, пустой вход, повтор, неизвестную ошибку и другой порядок завершения. Вернитесь к объяснению, если тест выявил пробел.</p><p>Prev / Next следуют выбранному маршруту. Можно читать главы отдельно; исходный Markdown доступен в каждой главе. Кодовые фрагменты могут быть самостоятельными, намеренно ошибочными или требовать показанного контекста — об этом говорится рядом.</p><h2>Проверка навыка</h2><p><a href="14-workshop.html">Четыре упражнения</a>, <a href="10-mock-interview.html">mock interview</a> и <a href="docs/EVALUATION.md">отчёт оценки</a>. Тесты проверяют корректность примеров; отдельный эксперимент проверяет решения после чтения курса. Эти результаты имеют разные ограничения.</p><pre><code>npm ci\nnpm run verify\nnpm start</code></pre><p><a href="README.md">README и запуск</a> · <a href="examples/workshop.ts">Ответы практикума</a> · <a href="benchmarks/TASKS.md">Новые задачи для проверки</a> · <a href="docs/AUDIT.md">Аудит содержания</a></p><h2>Границы курса</h2><p>Основной фокус — язык, backend и работа с данными. React, DOM, decorators и разработка библиотек рассматриваются за пределами этого материала. Задания авторские; они не являются списком вопросов конкретной компании.</p></section>`,
-  ),
-);
-console.log(`Built ${lessons.length} lessons, two tracks and dist/`);

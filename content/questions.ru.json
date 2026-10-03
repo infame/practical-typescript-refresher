@@ -1,0 +1,137 @@
+[
+  {
+    "topic": "Наличие значения",
+    "code": "const retries = 0;\nconst effective = retries || 3;",
+    "prompt": "Чему равен effective?",
+    "options": ["0", "3", "undefined"],
+    "answer": 1,
+    "explanation": "|| выбирает правую часть для любого falsy, включая 0. Если нужно заменить только null/undefined, используй ??.",
+    "chapter": 2,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing",
+    "source": "MDN: nullish coalescing"
+  },
+  {
+    "topic": "Проверка внешних данных",
+    "code": "const value: unknown = null;",
+    "prompt": "Достаточно ли typeof value === \"object\", чтобы читать поля?",
+    "options": ["Да", "Нет: нужен null-check и проверка полей"],
+    "answer": 1,
+    "explanation": "typeof null равен object. Тип unknown требует runtime-проверок; as не проверяет вход.",
+    "chapter": 3,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/narrowing.html",
+    "source": "TypeScript: Narrowing"
+  },
+  {
+    "topic": "Вывод типов",
+    "code": "const job = { status: \"queued\" };",
+    "prompt": "Какой тип у job.status без контекстного типа?",
+    "options": ["Только \"queued\"", "string", "unknown"],
+    "answer": 1,
+    "explanation": "const фиксирует ссылку, но поле изменяемо. Литерал поля расширяется до string. Задай контракт для состояния.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html",
+    "source": "TypeScript: Everyday Types"
+  },
+  {
+    "topic": "Optional-поля",
+    "code": "type Patch = { name?: string };",
+    "prompt": "При exactOptionalPropertyTypes подходит ли { name: undefined }?",
+    "options": ["Да", "Нет, нужен явный union с undefined"],
+    "answer": 1,
+    "explanation": "Отсутствие поля и явно записанный undefined — разные состояния. При чтении optional всё равно может быть undefined.",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html",
+    "source": "TypeScript: exactOptionalPropertyTypes"
+  },
+  {
+    "topic": "Readonly",
+    "code": "type State = Readonly<{ tags: string[] }>;",
+    "prompt": "Запрещён ли state.tags.push(\"new\") для State?",
+    "options": ["Да", "Нет: readonly неглубокий"],
+    "answer": 1,
+    "explanation": "Readonly запрещает заменить свойство, но вложенный массив остаётся изменяемым. Нужен readonly string[].",
+    "chapter": 11,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/object-types.html",
+    "source": "TypeScript: Object Types"
+  },
+  {
+    "topic": "Связь типов",
+    "code": "function first<T>(xs: readonly T[]): T | undefined",
+    "prompt": "Что сохраняет T?",
+    "options": ["Связь типа элементов входа и результата", "Любой результат превращается в any"],
+    "answer": 0,
+    "explanation": "Generic сохраняет связь типов. При пустом массиве результата нет: undefined нужен в контракте.",
+    "chapter": 12,
+    "url": "https://www.typescriptlang.org/docs/handbook/2/generics.html",
+    "source": "TypeScript: Generics"
+  },
+  {
+    "topic": "Идентичность объектов",
+    "code": "new Set([{ id: \"A\" }, { id: \"A\" }]).size",
+    "prompt": "Сколько элементов останется?",
+    "options": ["1", "2"],
+    "answer": 1,
+    "explanation": "Set сравнивает объекты по идентичности. Для дедупликации по id нужен Set ключей или Map с выбранным правилом конфликта.",
+    "chapter": 1,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set",
+    "source": "MDN: Set"
+  },
+  {
+    "topic": "Порядок async",
+    "code": "await Promise.all([slow(), fast()])",
+    "prompt": "В каком порядке будут результаты?",
+    "options": ["В порядке завершения", "В порядке входных promises"],
+    "answer": 1,
+    "explanation": "Promise.all сохраняет позиции входа. Первый rejection отклоняет общий promise, но не отменяет уже запущенные операции.",
+    "chapter": 4,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all",
+    "source": "MDN: Promise.all"
+  },
+  {
+    "topic": "Ограничение конкуренции",
+    "code": "await Promise.all(items.map(load))",
+    "prompt": "Ограничивает ли это число одновременных load до четырёх?",
+    "options": ["Да", "Нет, нужен limiter"],
+    "answer": 1,
+    "explanation": "map вызывает load для всех элементов сразу. Limiter должен управлять запуском, а не только ожиданием promises.",
+    "chapter": 5,
+    "url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise",
+    "source": "MDN: Promise"
+  },
+  {
+    "topic": "Неизвестная ошибка",
+    "code": "try { run(); } catch (error) { /* … */ }",
+    "prompt": "Как безопасно получить сообщение в strict-коде?",
+    "options": [
+      "error.message всегда доступен",
+      "error instanceof Error ? error.message : String(error)"
+    ],
+    "answer": 1,
+    "explanation": "Можно бросить строку, null или undefined. Сначала сузь unknown; политика сериализации более сложных объектов задаётся отдельно.",
+    "chapter": 9,
+    "url": "https://www.typescriptlang.org/tsconfig/useUnknownInCatchVariables.html",
+    "source": "TypeScript: useUnknownInCatchVariables"
+  },
+  {
+    "topic": "Доставка событий",
+    "code": "Событие содержит eventId и entityId.",
+    "prompt": "Чем отличить повторную доставку от нового изменения той же сущности?",
+    "options": ["Только entityId", "Ключом события eventId в области его уникальности"],
+    "answer": 1,
+    "explanation": "У сущности много законных изменений. Выбор последней версии и дедупликация доставки решают разные задачи. Область уникальности ключа — часть контракта.",
+    "chapter": 7,
+    "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/",
+    "source": "AWS Builders’ Library: Idempotent APIs"
+  },
+  {
+    "topic": "Запуск и проверка TS",
+    "code": "node example.ts",
+    "prompt": "Гарантирует ли успешный запуск отсутствие ошибок типов?",
+    "options": ["Да", "Нет, нужна отдельная проверка tsc"],
+    "answer": 1,
+    "explanation": "Node может удалить поддерживаемые аннотации и выполнить код без проверки типов. Запуск и статическая проверка — отдельные шаги.",
+    "chapter": 13,
+    "url": "https://nodejs.org/api/typescript.html",
+    "source": "Node: TypeScript"
+  }
+]
