@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 const root = path.resolve(import.meta.dirname, '..', 'dist');
 const count = (await fs.readdir(path.join(root, 'lessons'))).filter((f) =>
   /^\d+.*\.md$/.test(f),
@@ -8,11 +9,15 @@ let checked = 0,
   pagesChecked = 0;
 for (const lang of ['en', 'ru', 'es']) {
   const folder = path.join(root, lang === 'en' ? '' : lang);
+  const script = await fs.readFile(path.join(root, `assets/course-${lang}.js`));
+  const version = createHash('sha256').update(script).digest('hex').slice(0, 12);
   const pages = (await fs.readdir(folder)).filter((f) => f.endsWith('.html'));
   if (pages.length !== count + 2) throw new Error('Wrong page count: ' + lang);
   for (const page of pages) {
     const html = await fs.readFile(path.join(folder, page), 'utf8');
     pagesChecked++;
+    if (!html.includes(`assets/course-${lang}.js?v=${version}`))
+      throw new Error('Unversioned or mismatched course data: ' + page);
     if (!html.includes(`html lang="${lang}"`)) throw new Error('Wrong language');
     for (const id of ['domain-select', 'language-select', 'chapter-search'])
       if (!html.includes(`id="${id}"`)) throw new Error('Missing global control ' + id);

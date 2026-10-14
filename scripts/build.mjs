@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { domains, adaptDomain, escape, renderContent } from './course-content.mjs';
 
 const root = path.resolve(import.meta.dirname, '..'),
@@ -109,14 +110,13 @@ for (const lang of ['en', 'ru', 'es']) {
     pages,
     search,
   };
-  await fs.writeFile(
-    path.join(dist, `assets/course-${lang}.js`),
-    `window.COURSE=${JSON.stringify(publicData)};\n`,
-  );
+  const courseScript = `window.COURSE=${JSON.stringify(publicData)};\n`;
+  const courseVersion = createHash('sha256').update(courseScript).digest('hex').slice(0, 12);
+  await fs.writeFile(path.join(dist, `assets/course-${lang}.js`), courseScript);
   const start = byNumber.get(routeIds[0]);
   function shell(title, body, lesson = null) {
     const current = lesson?.number || 0;
-    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css"><link rel="stylesheet" href="${base}assets/style.css"><script src="${base}assets/course-${lang}.js" defer></script><script src="${base}assets/app.js" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select">${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select">${[
+    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css"><link rel="stylesheet" href="${base}assets/style.css"><script src="${base}assets/course-${lang}.js?v=${courseVersion}" defer></script><script src="${base}assets/app.js" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select">${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select">${[
       ['en', 'English'],
       ['ru', 'Русский'],
       ['es', 'Español'],
