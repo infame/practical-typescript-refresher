@@ -138,6 +138,17 @@ const handlers: Handlers = {
   added: event => console.log(event.price),
   removed: event => console.log(event.reason),
 };
+
+function dispatch(event: Event): void {
+  switch (event.kind) {
+    case "added": handlers.added(event); return;
+    case "removed": handlers.removed(event); return;
+    default: {
+      const unreachable: never = event;
+      throw new Error(`Unexpected event: ${String(unreachable)}`);
+    }
+  }
+}
 ```
 
 ## Comprobar comprensión

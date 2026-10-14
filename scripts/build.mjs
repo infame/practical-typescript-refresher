@@ -28,44 +28,6 @@ for (const f of [
   await fs.copyFile(path.join(root, f), path.join(dist, f));
 await fs.mkdir(path.join(dist, 'benchmarks'));
 await fs.copyFile(path.join(root, 'benchmarks/TASKS.md'), path.join(dist, 'benchmarks/TASKS.md'));
-const scopes = {
-  en: [
-    ['Types, inference, narrowing and practical generics', '11, 3, 12'],
-    ['Collections, concurrency, ingestion and failure reports', '1, 4, 5, 6, 14'],
-    [
-      'SQL, durable delivery, BFS/DFS/heaps and Node runtime',
-      '7, 8, 13 — introductions; not full specialist courses',
-    ],
-    [
-      'React/DOM, framework APIs, authentication/security, system design, advanced DP and distributed transactions',
-      'Separate preparation',
-    ],
-  ],
-  ru: [
-    ['Типы, вывод, narrowing и практические generics', '11, 3, 12'],
-    ['Коллекции, конкурентность, загрузка и отчёты об ошибках', '1, 4, 5, 6, 14'],
-    [
-      'SQL, durable delivery, BFS/DFS/heaps и Node runtime',
-      '7, 8, 13 — введение, не полноценные специализированные курсы',
-    ],
-    [
-      'React/DOM, API фреймворков, авторизация/безопасность, system design, сложная DP и распределённые транзакции',
-      'Отдельная подготовка',
-    ],
-  ],
-  es: [
-    ['Tipos, inferencia, narrowing y generics prácticos', '11, 3, 12'],
-    ['Colecciones, concurrencia, carga e informes de fallos', '1, 4, 5, 6, 14'],
-    [
-      'SQL, entrega duradera, BFS/DFS/heaps y runtime Node',
-      '7, 8, 13 — introducciones, no cursos especializados completos',
-    ],
-    [
-      'React/DOM, frameworks, autenticación/seguridad, system design, DP avanzada y transacciones distribuidas',
-      'Preparación por separado',
-    ],
-  ],
-};
 for (const lang of ['en', 'ru', 'es']) {
   const ui = translations[lang],
     base = lang === 'en' ? '' : '../',
@@ -73,7 +35,7 @@ for (const lang of ['en', 'ru', 'es']) {
   await fs.mkdir(directory, { recursive: true });
   const lessons = await Promise.all(
     files.map(async (file) => {
-      const sourcePath = lang === 'ru' ? `lessons/${file}` : `lessons/${lang}/${file}`;
+      const sourcePath = lang === 'en' ? `lessons/${file}` : `lessons/${lang}/${file}`;
       const source = await fs.readFile(path.join(root, sourcePath), 'utf8');
       const title = source.match(/^# (.+)$/m)[1],
         number = Number(file.slice(0, 2));
@@ -165,7 +127,7 @@ for (const lang of ['en', 'ru', 'es']) {
       )
       .join(
         '',
-      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="practice.html">${ui.practice}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><p class="storage-note" hidden>${lang === 'en' ? 'Progress cannot be saved in this browser.' : lang === 'ru' ? 'Браузер не сохраняет прогресс.' : 'El navegador no guarda progreso.'}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
+      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="practice.html">${ui.practice}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><p class="storage-note" hidden>${ui.storageNote}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
   }
   async function output(file, html) {
     await fs.writeFile(path.join(directory, file), html);
@@ -200,10 +162,8 @@ for (const lang of ['en', 'ru', 'es']) {
       `<h1>${ui.practice}</h1><p>${ui.practiceIntro}</p>${vocabulary()}<section class="practice-prerequisites"><h2>${ui.prerequisites}</h2><p>${[3, 1, 5, 9].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p></section><article id="lesson-article">${pract.html}</article><p><a href="${base}content/practice.${lang}.md">${ui.markdown}</a> · <a href="${base}examples/training-core.ts">TypeScript</a></p><a class="primary-link" href="${byNumber.get(10).href}">${escape(byNumber.get(10).title)}</a>`,
     ),
   );
-  const quiz = `<section id="diagnostic"><h2>${ui.diagnostic}</h2><p>${lang === 'en' ? '12 questions, about 5–10 minutes. Choose “I don’t know” when unsure. Your answers stay in this browser tab; correct guesses do not demonstrate independent coding.' : lang === 'ru' ? '12 вопросов на 5–10 минут. При неуверенности выбирайте «Не знаю». Ответы остаются в этой вкладке; правильный выбор не доказывает умение написать код.' : '12 preguntas, unos 5–10 minutos. Elige «No lo sé» si dudas. Las respuestas quedan en esta pestaña; acertar no demuestra programación independiente.'}</p><details><summary>${ui.startDiagnostic}</summary><form id="diagnostic-form">${questions.map((q, i) => `<fieldset><legend>${i + 1}. ${escape(q.topic)}</legend>${renderContent('```ts\n' + q.code + '\n```', ui.solution).html}<p>${escape(q.prompt)}</p>${[...q.options, ui.unknown].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}">${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit">${ui.showGaps}</button><button type="reset" class="secondary-button">${ui.reset}</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
-  const scope = `<section id="scope"><h2>${ui.scope}</h2><p>${ui.scopeIntro}</p><table><thead><tr><th>${ui.trained}</th><th>${ui.sources}</th></tr></thead><tbody>${scopes[
-    lang
-  ]
+  const quiz = `<section id="diagnostic"><h2>${ui.diagnostic}</h2><p>${ui.diagnosticIntro}</p><details><summary>${ui.startDiagnostic}</summary><form id="diagnostic-form">${questions.map((q, i) => `<fieldset><legend>${i + 1}. ${escape(q.topic)}</legend>${renderContent('```ts\n' + q.code + '\n```', ui.solution).html}<p>${escape(q.prompt)}</p>${[...q.options, ui.unknown].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}">${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit">${ui.showGaps}</button><button type="reset" class="secondary-button">${ui.reset}</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
+  const scope = `<section id="scope"><h2>${ui.scope}</h2><p>${ui.scopeIntro}</p><table><thead><tr><th>${ui.trained}</th><th>${ui.sources}</th></tr></thead><tbody>${ui.coverage
     .slice(0, 2)
     .map(
       ([a, b]) =>
@@ -215,7 +175,7 @@ for (const lang of ['en', 'ru', 'es']) {
     )
     .join(
       '',
-    )}</tbody></table><h3>${ui.introduced}</h3><p>${scopes[lang][2][0]}. ${[7, 8, 13].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p><h3>${ui.outside}</h3><p>${scopes[lang][3][0]}</p><p><a href="https://www.typescriptlang.org/docs/handbook/intro.html">TypeScript Handbook</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">MDN JavaScript</a> · <a href="https://nodejs.org/api/">Node.js</a></p></section>`;
+    )}</tbody></table><h3>${ui.introduced}</h3><p>${ui.coverage[2][0]}. ${[7, 8, 13].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p><h3>${ui.outside}</h3><p>${ui.coverage[3][0]}</p><p><a href="https://www.typescriptlang.org/docs/handbook/intro.html">TypeScript Handbook</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript">MDN JavaScript</a> · <a href="https://nodejs.org/api/">Node.js</a></p></section>`;
   const tracks = ['refresher', 'interview']
     .map(
       (key) =>

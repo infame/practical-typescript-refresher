@@ -1,29 +1,25 @@
-# Подзабыл TS: восстановить язык
+# Returning to TypeScript: the language
 
-Эта глава — вход для разработчика, который умеет программировать, но давно не писал TypeScript. Она восстанавливает базовые правила, чтобы следующие главы не ощущались набором заклинаний. Сначала разберём, что знает компилятор, затем перейдём к объектам и функциям.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Два слоя: тип и значение
+## Types and values
+
+A value exists at runtime; a type describes permitted values to the checker. Ordinary annotations, type aliases and interfaces are erased, so they do not validate JSON. Some TS constructs such as a normal enum generate runtime code. Use lowercase string, number and boolean rather than wrapper types. number includes integers and fractions; bigint is separate and cannot be mixed directly with number arithmetic.
 
 ```ts check
 const limit: number = 4;
 type Options = { limit: number };
 ```
 
-limit существует во время исполнения. Options — описание для проверки кода. Обычные type/interface и аннотации удаляются при подготовке JS. Компилятор проверяет совместимость, но не добавляет автоматическую проверку пользовательского JSON.
+## Inference and widening
 
-Некоторые конструкции TypeScript, например обычный enum, создают runtime-код. Поэтому утверждение «всё в TS стирается» слишком широкое. В упражнениях используем в основном стираемый синтаксис, который Node может выполнить без отдельной сборки. Проверку типов всё равно запускаем отдельно.
-
-Примитивы пишутся строчными: string, number, boolean. Number — общий числовой тип; встроенных разных типов int и float нет. Bigint существует отдельно и напрямую с number в арифметике не смешивается. Типы String/Number/Boolean с большой буквы относятся к wrapper-объектам и обычно не нужны.
-
-## 2. Inference: где аннотация нужна
+let can be reassigned, so a string literal typically widens to string. const keeps a literal for a primitive binding, but an object property remains mutable and often widens. Add an explicit contract when building a state object. as const narrows literals and produces readonly views; satisfies checks the shape but may retain a narrow literal instead of widening it. Give empty collections context when incrementally filling them; do not memorize a universal rule that every empty array is never[].
 
 ```ts check
-let status = "queued";   // string: переменную можно переназначать
-const mode = "queued";   // литеральный тип "queued"
-const job = { status: "queued" }; // поле status обычно string
+let status = "queued";
+const mode = "queued";
+const job = { status: "queued" };
 ```
-
-const запрещает заменить ссылку на job, но поле job.status всё ещё изменяемо. Поэтому компилятор обычно расширяет литерал поля до string. Это частая причина ошибки при передаче объекта в API, ожидающее `"queued" | "done"`.
 
 ```ts check
 type Job = { status: "queued" | "done" };
@@ -31,20 +27,14 @@ const job: Job = { status: "queued" };
 job.status = "done";
 ```
 
-Аннотация задаёт контракт. `as const` сохраняет более узкие литералы и readonly-представление; не выбирай его, если объект должен менять состояние. `satisfies` проверяет соответствие формы, но не гарантирует, что каждое поле будет расширено до целевого union. Узкий литеральный тип может остаться узким.
-
-У пустой коллекции компилятору часто нечего выводить:
-
 ```ts check
 const state: { tags: string[] } = { tags: [] };
 state.tags.push("new");
 ```
 
-В strict-коде поле `tags: []` без контекста может получить never[]. У отдельной переменной пустого массива правила вывода зависят от контекста. Не заучивай «пустой массив всегда never[]»: задавай тип, когда собираешь коллекцию постепенно.
+## Structural typing
 
-## 3. Structural typing
-
-TypeScript обычно смотрит на форму объекта, а не на имя его типа.
+Compatibility normally depends on members rather than the declared name. An object with required members and additional fields may be assignable through a variable. A fresh object literal also receives excess-property checks to catch likely mistakes. Those checks do not make an exact runtime schema or remove extra fields. Two aliases of string remain compatible; brands can distinguish IDs when this matters.
 
 ```ts check
 type Identified = { id: string };
@@ -52,25 +42,19 @@ function show(value: Identified): string {
   return value.id;
 }
 const listing = { id: "A", price: 500 };
-show(listing); // можно: обязательное поле id есть
+show(listing);
 ```
-
-Но свежий object literal имеет дополнительную проверку лишних полей:
 
 ```ts check
 type Identified = { id: string };
 function show(value: Identified): string { return value.id; }
-// @ts-expect-error: лишнее поле в свежем литерале
+// @ts-expect-error: intentional type error
 show({ id: "A", price: 500 });
 ```
 
-Это помогает ловить опечатки, но не превращает тип в точную runtime-схему. Передача через переменную может быть допустимой; лишние поля физически не исчезают. Для контроля внешнего объекта нужен parser.
+## Unions and intersections
 
-Так же два типа `UserId = string` и `ListingId = string` совместимы: alias не создаёт отдельную номинальную сущность. Для предотвращения путаницы можно использовать branded types, о них дальше в главе про проектирование типов.
-
-## 4. Union и intersection
-
-`A | B` — значение одного из вариантов. До проверки доступны только операции, безопасные для всех вариантов.
+A | B allows one of the alternatives; only operations safe for all members are available until narrowing. A & B must satisfy both contracts simultaneously, so conflicting property types can produce never. An intersection does not overwrite a property with the right side: omit the original key first when replacing its type. Model mutually exclusive states as a union.
 
 ```ts check
 function format(value: string | number): string {
@@ -78,53 +62,41 @@ function format(value: string | number): string {
 }
 ```
 
-`A & B` — значение должно удовлетворять обоим контрактам одновременно. Intersection не означает «перезапиши поле правым типом».
-
 ```ts check
 type Impossible = { id: string } & { id: number };
-// id должен быть и string, и number: для обычных значений это never.
+
 ```
 
-Чтобы заменить тип поля: `Omit<Original, "id"> & { id: number }`. Для состояния «успех или ошибка» обычно нужен union, а не intersection и несколько необязательных полей.
+## Optional versus undefined
 
-## 5. Optional: отсутствует или равен undefined
+With exactOptionalPropertyTypes, field?: number permits absence but not an explicit undefined unless included in the value union. Reading the field can still produce undefined. field: number | undefined requires the property itself. PATCH often assigns different meanings to absence and null. in includes inherited properties; Object.hasOwn checks ownership but is not always enough to narrow the value type.
 
 ```ts check
 type Options = { retries?: number };
 const omitted: Options = {};
 ```
 
-При чтении retries может быть undefined. С включённым exactOptionalPropertyTypes запись `{ retries: undefined }` не соответствует этому типу: поле либо отсутствует, либо содержит number. Если undefined нужен как явное значение, напиши `retries?: number | undefined`.
+## Arrays, tuples and readonly
 
-`{ retries: number | undefined }` требует само поле: `{}` не подходит. Поэтому «optional-поле» и «обязательное поле с возможным undefined» — разные контракты.
-
-Для PATCH это особенно полезно: отсутствие поля может означать «оставить», null — «очистить». Не теряй различие при нормализации. `"field" in obj` проверяет наличие и по цепочке прототипов; `Object.hasOwn` — только собственное поле. Последний сам по себе не всегда даёт нужное сужение типа, поэтому наличие и тип значения проверяются осознанно.
-
-## 6. Массивы, tuple и readonly
+An ordinary array has no minimum length. Under noUncheckedIndexedAccess, an indexed read can be undefined. A tuple describes fixed positions, and labels are editor information rather than runtime named fields. Prefer readonly inputs for functions that only read: both mutable and readonly callers can use them. Readonly is shallow and another alias can still mutate the underlying object.
 
 ```ts check
 const prices: number[] = [100, 200];
 const point: readonly [x: number, y: number] = [10, 20];
 ```
 
-Tuple задаёт позиции: point[0] — x, point[1] — y. Названия помогают редактору, но не создают runtime-поля point.x. Обычный массив не гарантирует длину; с noUncheckedIndexedAccess обращение prices[0] включает undefined.
+## Function signatures
 
-Readonly-массив можно читать и передавать дальше в readonly API. Функция, которая только читает вход, должна принимать readonly: так ей подходят и изменяемые, и неизменяемые коллекции. Readonly неглубокий и не защищает от изменения через другой alias.
-
-## 7. Сигнатуры функций
+Context provides callback parameter types. An optional parameter means callers may omit it; do not mark index optional when the API always passes it simply because some callbacks ignore it. Rest parameters collect arguments. Async functions return Promise<T>. A callback typed () => void may return a value because the caller promises not to use it; void is not a runtime proof that nothing is returned.
 
 ```ts check
 type Formatter = (price: number, currency?: string) => string;
 const format: Formatter = (price, currency = "USD") => `${currency} ${price}`;
 ```
 
-Типы параметров callback выводятся из контекста. Optional-параметр означает, что вызывающая сторона может его не передать. Если твой API всегда передаёт index callback, не объявляй index optional только потому, что некоторые callbacks его игнорируют: игнорировать лишний аргумент и получать потенциальный undefined — разные вещи.
+## This and closures
 
-Rest-параметр принимает много аргументов: `(...values: number[])`. Async-функция возвращает `Promise<T>`, а не T. `void` у callback означает, что вызывающий код не использует возвращённое значение. Поэтому функция, возвращающая number, может соответствовать `() => void`; это не обещание отсутствия результата во время исполнения.
-
-## 8. This и замыкания
-
-this обычного метода зависит от способа вызова. При передаче метода как callback объект-получатель может потеряться.
+A normal method gets this from its call site and can lose its receiver when passed as a callback. bind, a wrapper or an arrow field can preserve the intended receiver. A closure retains access to a variable rather than an automatic snapshot. let provides an iteration-local binding; var can make callbacks share one changing binding.
 
 ```ts check
 class Counter {
@@ -136,18 +108,37 @@ const safe = () => counter.increment();
 safe();
 ```
 
-Можно использовать bind либо arrow-поле класса, которое сохраняет this экземпляра. Замыкание хранит доступ к переменной, а не автоматически её снимок. Если переменная изменится до вызова callback, callback увидит новое значение. В цикле let создаёт отдельное binding на итерацию, var — общее.
+Passing counter.increment to a scheduler detaches the method from its object. The receiver is determined by the later call, not by where the method was obtained. bind creates a function with the receiver attached; a wrapper calls the method on the object when needed. A closure reads the binding when invoked, so changing count before the call changes the result. Check both a direct call and a detached callback: testing only counter.increment() cannot expose the bug.
 
-## Практика
+```ts check
+class Counter {
+  value = 0;
+  increment() { this.value++; }
+}
+const counter = new Counter();
+const detached = counter.increment;
+// detached() would throw in this strict module: this is undefined.
+const bound = counter.increment.bind(counter);
+bound(); // value is 1.
+let count = 0;
+const readCount = () => count;
+count = 2;
+readCount(); // 2: the closure reads the current variable, not its old value.
+```
 
-Почему `const job = { status: "queued" }` может не подойти для Job? Почему `Readonly<{ tags: string[] }>` всё ещё позволяет push в tags? И чем `retries?: number` отличается от `retries: number | undefined`?
+## Practice
 
-### Спойлер
+Why can an inferred job status fail a literal-union contract? Why can Readonly<{ tags: string[] }> still permit push? How does an optional field differ from a required field containing undefined?
 
-Поле status обычно выведено как string, а Job ожидает ограниченный union. Задай аннотацию Job или осознанно выбери литеральный тип. Readonly запрещает заменить свойство tags, но не менять сам массив; для этого нужен readonly string[]. Optional разрешает отсутствие свойства, обязательное union-поле требует его наличия. При exactOptionalPropertyTypes отдельно различаются отсутствие и явно записанный undefined.
+### Spoiler
 
-## Когда двигаться дальше
+The inferred property can be string; annotate the intended state contract. Readonly prevents replacing tags but its array needs readonly string[] to prevent mutation through that view. An optional property may be absent; the required union property must exist. exactOptionalPropertyTypes additionally controls explicitly writing undefined.
 
-Ты можешь объяснить тип и значение, написать функцию с callback, выбрать union для вариантов и проверить неизвестный вход. Дальше читай главу 2 о runtime и главу 3 о narrowing.
+## Move on when you can explain
 
-Справочники для уточнения терминов: [Everyday Types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html), [exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html). Объяснения и упражнения в этой главе авторские.
+Explain type versus value, write a callback signature, distinguish missing from null, and narrow unknown data without assertions. Then use the runtime chapter and practical TypeScript chapter to put these rules into working code.
+
+## Official references
+
+- [TypeScript: everyday-types](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html)
+- [TypeScript: exactOptionalPropertyTypes](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html)

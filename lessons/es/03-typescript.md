@@ -138,6 +138,17 @@ function countApplied(results: readonly ImportResult[]): number {
 }
 ```
 
+#### Error plausible: afirmar el tipo de datos externos
+
+```ts check
+type Item = { id: string; price: number };
+const raw: unknown = { id: "A", price: "free" };
+const item = raw as Item;
+const total = item.price + 1; // runtime: "free1", not a number.
+```
+
+El código pasa typecheck, pero el resultado viola el contrato numérico. as cambia la visión del compilador sin convertir la cadena. Comprueba objeto, null/arrays y cada campo antes de construir un Item nuevo. Incluye cadenas, campos ausentes, cero y números no finitos en las pruebas.
+
 ## Explicar la frontera
 
 Indica dónde se valida y cuáles son los errores esperados. El contrato útil entrega un valor validado o un fallo explícito; una assertion no transforma datos desconocidos en seguros.

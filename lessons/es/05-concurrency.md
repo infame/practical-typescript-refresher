@@ -84,7 +84,29 @@ Implementa sin mirar la respuesta. Prueba retrasos diferentes, un fallo temprano
 
 Reserva el índice antes de await, guarda el primer error y un indicador independiente. Espera todos los workers activos antes de relanzar. No afirmes que el trabajo activo fue cancelado si solamente dejaste de programar nuevas entradas.
 
+#### Error plausible: limitar promesas ya iniciadas
+
+```ts check
+async function demonstrateEagerStart(): Promise<number[]> {
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const started: number[] = [];
+  const load = async (id: number): Promise<number> => {
+    started.push(id);
+    await gate;
+    return id;
+  };
+  const promises = [1, 2, 3].map(load);
+  // All three are active now; awaiting promises one by one cannot undo that.
+  const beforeWaiting = [...started]; // [1, 2, 3]
+  release();
+  await Promise.all(promises);
+  return beforeWaiting;
+}
+```
+
+Los workers deben recibir elementos o funciones que inician trabajo, no promesas ya activas. Con límite dos, la tercera llamada espera a que termine una de las primeras. El gate demuestra que todas empezaron antes de esperar. Los lotes fijos mantienen el máximo, pero desperdician capacidad al terminar una tarea antes: un worker libre debe tomar la siguiente.
+
 ## Probar comportamiento
 
 Cuenta operaciones activas y máximo, controla la finalización con promises diferidas y comprueba orden y ausencia de nuevos inicios tras observar un fallo. Evita tests basados en tiempos de reloj. Incluye límite uno y límite mayor que la longitud.
-

@@ -22,7 +22,7 @@ npm start
 
 Abre http://127.0.0.1:4173/es/. Usa un servidor HTTP: los módulos del navegador no están preparados para file://.
 
-Fuentes: `lessons/es/`, `lessons/en/` y `lessons/` (ruso). Preguntas, interfaz y práctica compartida: `content/`. Implementaciones comprobadas: `examples/`. Ejecuta `npm run build` tras editar.
+Fuentes: `lessons/` (inglés canónico), `lessons/ru/` y `lessons/es/`. Preguntas, interfaz y práctica compartida: `content/`. Implementaciones comprobadas: `examples/`. Ejecuta `npm run build` tras editar.
 
 [Contribuir](CONTRIBUTING.md) · [Contratos de práctica](docs/DOMAIN-PRACTICE.md) · [Auditoría](docs/AUDIT.md) · [Evaluación](docs/EVALUATION.md)
 

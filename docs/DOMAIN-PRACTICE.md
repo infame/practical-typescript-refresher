@@ -19,4 +19,4 @@ These numeric fields deliberately share the simplified rule “finite, nonnegati
 
 The neutral implementation is `examples/training-core.ts`, tested by `examples/training-core.test.ts`. The practice page shows prerequisites before the tasks, and answers under closed spoilers. No extra chapter outline appears below answers.
 
-`examples/domains.ts` and `training.json` preserve the earlier, supplementary domain-specific tasks. They are separate exercises and are not the reader's shared practice flow.
+English `training.json` (with the earlier Russian copy in `content/training.ru.json`) and `examples/domains.ts` preserve the earlier, supplementary domain-specific tasks. They are separate exercises and are not the reader's shared practice flow.

@@ -93,7 +93,24 @@ Para A/v3, B/v1, A/v2, A/v5, B/v1 conserva la primera entrada si las versiones e
 
 Quedan A/v5 y el primer B/v1. Para contar, usa counts.set(id, (counts.get(id) ?? 0) + 1). Seleccionar una versión, deduplicar una entrega y contar eventos son operaciones con claves y políticas diferentes.
 
+#### Error plausible: deduplicar por entidad
+
+```ts check
+const events = [
+  { eventId: "E1", entityId: "A", version: 1 },
+  { eventId: "E2", entityId: "A", version: 2 },
+];
+const seen = new Set<string>();
+const wrong = events.filter(event => {
+  if (seen.has(event.entityId)) return false;
+  seen.add(event.entityId);
+  return true;
+});
+// wrong contains only E1/version 1.
+```
+
+E2 es una actualización nueva, no una repetición. Se exige versión 2, pero deduplicar por entidad la elimina antes de elegir versión. Usa identidad de evento para entrega e identidad de entidad para estado; añade sourceId si hay varias fuentes. Sustituir con >= también rompe la política de conservar el primer empate.
+
 ## Explicar la decisión
 
 Explica la clave, la regla de conflicto, el coste y el orden garantizado. Decir que mantienes la versión máxima por entidad comunica más que nombrar Map. Prueba también identificadores repetidos y caracteres de separación.
-

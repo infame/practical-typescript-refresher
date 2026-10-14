@@ -24,6 +24,12 @@ The training covers inference, narrowing, practical generics, type design, JavaS
 
 This is a refresher, not a comprehensive course or a guarantee of passing any interview. Exercises are original and independent of a particular employer.
 
+## Content highlights
+
+Ten compiler-error walkthroughs pair intentional errors with explained fixes. Five wrong implementations have concrete counterexamples, and the workshop ends with a fifteen-trap review sheet. All additions are available in English, Russian and Spanish.
+
+[Content release plan](docs/PLAN.md) · [Compiler-error clinic](lessons/13-tooling.md) · [Workshop and review sheet](lessons/14-workshop.md)
+
 ## Start locally
 
 Requires Node.js 24+ and npm.
@@ -39,6 +45,7 @@ Open http://127.0.0.1:4173. Use `/ru/` or `/es/` for translations. Serve the bui
 ## Check your own work
 
 ```sh
+npm run check:content
 npm run check
 npm test
 npm run check:snippets
@@ -50,7 +57,7 @@ The evaluation harness runs the submitted module on your machine. Use your own o
 
 ## Edit and contribute
 
-English sources are in `lessons/en/`, Spanish in `lessons/es/`, Russian in `lessons/`. Shared practice, diagnostic questions and UI translations are in `content/`. Domain vocabulary is defined in `scripts/course-content.mjs`. Tested implementations are in `examples/`.
+Canonical English sources are in `lessons/`, Russian in `lessons/ru/` and Spanish in `lessons/es/`. Shared practice, diagnostic questions and UI translations are in `content/`. Domain vocabulary is defined in `scripts/course-content.mjs`. Tested implementations are in `examples/`.
 
 Run `npm run build` after editing. The static site goes into `dist/`; root HTML copies preserve existing lesson filenames. Keep chapter IDs and section order consistent across languages and update `course.json` for route changes. See [CONTRIBUTING](CONTRIBUTING.md).
 

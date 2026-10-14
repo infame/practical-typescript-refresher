@@ -94,4 +94,3 @@ Cuenta requisitos y tests, pero también assertions inseguras, supuestos sin exp
 ## Antes de la entrevista
 
 Ejecuta el proyecto, revisa configuración y practica con tiempo. Este ejercicio es backend/datos, no una garantía universal. Frontend, frameworks, system design y algoritmos avanzados requieren preparación aparte.
-

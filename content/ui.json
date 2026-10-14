@@ -74,7 +74,21 @@
     "prerequisites": "Review these chapters first",
     "startRoute": "Start this route",
     "skip": "Skip to content",
-    "navigation": "Chapter navigation"
+    "navigation": "Chapter navigation",
+    "coverage": [
+      ["Types, inference, narrowing and practical generics", "11, 3, 12"],
+      ["Collections, concurrency, ingestion and failure reports", "1, 4, 5, 6, 14"],
+      [
+        "SQL, durable delivery, BFS/DFS/heaps and Node runtime",
+        "7, 8, 13 — introductions; not full specialist courses"
+      ],
+      [
+        "React/DOM, framework APIs, authentication/security, system design, advanced DP and distributed transactions",
+        "Separate preparation"
+      ]
+    ],
+    "storageNote": "Progress cannot be saved in this browser.",
+    "diagnosticIntro": "12 questions, about 5–10 minutes. Choose “I don’t know” when unsure. Your answers stay in this browser tab; correct guesses do not demonstrate independent coding."
   },
   "ru": {
     "brand": "Практический TypeScript",
@@ -151,7 +165,21 @@
     "prerequisites": "Сначала повторите эти главы",
     "startRoute": "Начать маршрут",
     "skip": "Перейти к содержимому",
-    "navigation": "Навигация по главам"
+    "navigation": "Навигация по главам",
+    "coverage": [
+      ["Типы, вывод, narrowing и практические generics", "11, 3, 12"],
+      ["Коллекции, конкурентность, загрузка и отчёты об ошибках", "1, 4, 5, 6, 14"],
+      [
+        "SQL, durable delivery, BFS/DFS/heaps и Node runtime",
+        "7, 8, 13 — введение, не полноценные специализированные курсы"
+      ],
+      [
+        "React/DOM, API фреймворков, авторизация/безопасность, system design, сложная DP и распределённые транзакции",
+        "Отдельная подготовка"
+      ]
+    ],
+    "storageNote": "Браузер не сохраняет прогресс.",
+    "diagnosticIntro": "12 вопросов на 5–10 минут. При неуверенности выбирайте «Не знаю». Ответы остаются в этой вкладке; правильный выбор не доказывает умение написать код."
   },
   "es": {
     "brand": "TypeScript práctico",
@@ -228,6 +256,20 @@
     "prerequisites": "Repasa primero estos capítulos",
     "startRoute": "Iniciar esta ruta",
     "skip": "Saltar al contenido",
-    "navigation": "Navegación por capítulos"
+    "navigation": "Navegación por capítulos",
+    "coverage": [
+      ["Tipos, inferencia, narrowing y generics prácticos", "11, 3, 12"],
+      ["Colecciones, concurrencia, carga e informes de fallos", "1, 4, 5, 6, 14"],
+      [
+        "SQL, entrega duradera, BFS/DFS/heaps y runtime Node",
+        "7, 8, 13 — introducciones, no cursos especializados completos"
+      ],
+      [
+        "React/DOM, frameworks, autenticación/seguridad, system design, DP avanzada y transacciones distribuidas",
+        "Preparación por separado"
+      ]
+    ],
+    "storageNote": "El navegador no guarda progreso.",
+    "diagnosticIntro": "12 preguntas, unos 5–10 minutos. Elige «No lo sé» si dudas. Las respuestas quedan en esta pestaña; acertar no demuestra programación independiente."
   }
 }

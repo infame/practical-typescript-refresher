@@ -1,18 +1,18 @@
-# Проектирование типов: дальше базовых generics
+# Type design beyond basic generics
 
-Цель: читать и писать небольшие типизированные API без случайного any и чрезмерной сложности. Перед этой главой стоит пройти narrowing и generics из главы 3. Здесь каждый приём связан с конкретной задачей.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Сначала спроси, какую связь сохраняет generic
+## What relationship does the generic preserve?
+
+identity links its input and output through T. A generic used only once may add no useful information. groupBy preserves element and key types; mapLimit preserves input and callback result; getField preserves key/value correspondence. Prefer the smallest API that expresses the relationship instead of adding parameters for every implementation detail.
 
 ```ts check
 function identity<T>(value: T): T { return value; }
 ```
 
-T связывает вход и выход. Если функция принимает T, но возвращает просто string и нигде больше не использует T, возможно, generic не нужен. Чем больше параметров типа, тем больше решений должен принять компилятор и читатель. Добавляй параметр, когда он сохраняет полезную информацию.
+## Typeof, keyof and indexed access
 
-Для функций группировки generic сохраняет тип элемента и ключа. Для mapLimit — тип входа и результата callback. Для API `getField<T, K extends keyof T>` сохраняет связь ключа с типом значения.
-
-## 2. Typeof и keyof: значение как источник типов
+typeof in a type position extracts the type of an existing value; keyof extracts its keys; indexed access selects value types. This can derive configuration unions without maintaining duplicate lists. Object.keys normally returns string[] because a structurally typed object may have extra runtime properties. An assertion to (keyof T)[] is valid only under stronger assumptions, not for every object.
 
 ```ts check
 const sourceNames = { primary: "MLS", secondary: "Partner" } as const;
@@ -20,13 +20,9 @@ type SourceKey = keyof typeof sourceNames; // "primary" | "secondary"
 type SourceName = (typeof sourceNames)[SourceKey]; // "MLS" | "Partner"
 ```
 
-typeof в позиции типа берёт тип существующего значения. keyof получает ключи. Indexed access получает типы полей. Это помогает не дублировать один список в runtime-конфигурации и ручном union.
+## Mapped types
 
-Но runtime-объект и его тип всё ещё разные вещи: `Object.keys` обычно возвращает string[], а не точный массив keyof. Это связано с тем, что структурно типизированный объект может содержать дополнительные runtime-поля. Не делай универсальное `as (keyof T)[]` без понимания предпосылок.
-
-## 3. Mapped types: преобразовать поля
-
-Нужно дать patch, где каждое существующее поле можно либо обновить, либо очистить:
+A mapped type visits each key and transforms its property type. An optional clearable patch adds null to each editable field. Apply it only to allowed fields so callers cannot alter identifiers. This type does not implement runtime patch semantics: the function still must distinguish absence, validate values and construct the next state.
 
 ```ts check
 type ClearablePatch<T> = {
@@ -36,29 +32,19 @@ type Editable = { price: number; description: string };
 type Patch = ClearablePatch<Editable>;
 ```
 
-Для каждого ключа K берём исходный тип T[K], добавляем null и делаем поле optional. Важно применять тип только к действительно редактируемым полям: включение id в T случайно разрешит менять идентификатор.
+## Conditional types and infer
 
-Такой тип не реализует patch runtime-логикой. Нужна функция, которая различает отсутствие и null, проверяет поля и строит новое состояние. Создание utility type не завершает бизнес-задачу.
-
-## 4. Conditional types и infer
-
-Представь helper, который получает тип результата функции:
+infer extracts a matching part in a conditional type. ReturnType gets a function return type and Awaited models await unwrapping; neither executes the function. A naked type parameter on the left of extends distributes over union members. Wrapping the operands in tuples asks about the union as a whole. Use these to read libraries, but do not build a complex conditional type when a normal signature is sufficient.
 
 ```ts check
 type Returned<F> = F extends (...args: never[]) => infer R ? R : never;
 type Example = Returned<() => Promise<number>>; // Promise<number>
 ```
 
-В условии infer R просит вывести подходящую часть типа. Для обычной работы есть готовые ReturnType и Awaited:
-
 ```ts check
 async function load() { return { id: "A", price: 500 }; }
 type Loaded = Awaited<ReturnType<typeof load>>;
 ```
-
-Awaited моделирует разворачивание await, в том числе вложенных Promise-подобных типов. ReturnType просто извлекает возвращаемый тип; исполнение функции не происходит.
-
-Conditional type с голым параметром типа слева от extends распределяется по union:
 
 ```ts check
 type KeepStrings<T> = T extends string ? T : never;
@@ -68,9 +54,9 @@ type AllStrings<T> = [T] extends [string] ? true : false;
 type B = AllStrings<"x" | 42>; // false
 ```
 
-Tuple-обёртка меняет вопрос: проверяем union целиком, а не каждый вариант отдельно. Это полезно для чтения библиотечных типов, но на интервью не нужно строить сложный conditional type там, где обычная сигнатура достаточна.
+## Overloads
 
-## 5. Overloads: разные входы, разные выходы
+Overloads express different accepted inputs and corresponding outputs. Callers see the overloads, not the implementation signature. An argument already typed as a union may match neither individual overload; add a union overload or choose one union signature when exact correlation is unnecessary. Keep overloads small enough to explain.
 
 ```ts check
 function normalize(value: string): string;
@@ -80,15 +66,9 @@ function normalize(value: string | readonly string[]): string | string[] {
 }
 ```
 
-Внешние overload-сигнатуры описывают допустимые вызовы. Широкая implementation-сигнатура проверяет тело, но сама не является дополнительным публичным overload.
+## Assertions, assertion functions and satisfies
 
-Если у вызывающего кода значение уже `string | readonly string[]`, ни один из двух overload не подходит целиком. Можно добавить union-overload либо выбрать обычную union-сигнатуру, если точная связь входа и выхода не нужна. Чрезмерное число overload усложняет чтение и вывод типов.
-
-## 6. Assert, assertion function и satisfies
-
-`as` утверждает тип. `!` утверждает отсутствие null/undefined. Они не создают runtime-проверку. Используй их там, где есть внешнее доказательство, а не как средство успокоить компилятор.
-
-Assertion function действительно выполняет проверку:
+as and ! assert facts without runtime checks. An assertion function can perform a real check and narrow after a successful call, or throw on failure. satisfies checks compatibility while as const preserves literal information. None of these validates a loaded configuration unless an actual runtime check is executed.
 
 ```ts check
 function assertString(value: unknown): asserts value is string {
@@ -100,8 +80,6 @@ function upper(value: unknown): string {
 }
 ```
 
-После успешного вызова компилятор сужает value. В отличие от boolean-guard здесь ошибка прерывает выполнение.
-
 ```ts check
 type Route = "home" | "listings";
 const routes = {
@@ -110,9 +88,9 @@ const routes = {
 } as const satisfies Record<Route, string>;
 ```
 
-satisfies проверяет контракт, а as const сохраняет литералы. Если маршрутов не хватает или имя написано с ошибкой, проверка поможет. Это не проверка внешней конфигурации в runtime.
+## Branded identifiers
 
-## 7. Branded types для похожих идентификаторов
+An intersection with a unique-symbol property prevents casually mixing two string identifier types. Put the assertion in a parser after checking the domain condition. The brand does not attach a runtime symbol to the primitive; after JSON round-trip, reestablish the guarantee at the boundary. Use this when the confusion risk justifies the extra API work.
 
 ```ts check
 declare const listingIdBrand: unique symbol;
@@ -126,30 +104,26 @@ function parseListingId(value: unknown): ListingId {
 }
 ```
 
-Brand делает случайное присваивание обычной строки несовместимым. Assertion локализован в parser после проверки. Brand не добавляет символ в реальную строку: во время исполнения это по-прежнему string. После JSON roundtrip типовую гарантию нужно восстановить проверкой.
+## Functions and variance
 
-Для двух ID с разными brands нельзя случайно передать UserId вместо ListingId. Это полезно на границах API, но стоит дополнительного кода. Для маленькой задачи обычных строк может хватить.
-
-## 8. Функции и variance
-
-Если API может передать callback любое Animal, нельзя давать callback, который умеет работать только с Dog. Он может получить кота. При strictFunctionTypes обычные function types проверяются с учётом этой опасности. Методы имеют некоторые послабления совместимости, поэтому изменение callback-свойства на method-синтаксис не всегда нейтрально.
+If an API may call a handler with any Animal, a handler requiring Dog can fail on a cat. strictFunctionTypes catches this for ordinary function properties; method compatibility has exceptions. Explain what the caller may supply and what the callback can safely accept rather than relying only on variance terminology.
 
 ```ts check
 type Animal = { name: string };
 type Dog = Animal & { bark(): void };
 type Handler = (animal: Animal) => void;
 const onlyDogs = (dog: Dog) => dog.bark();
-// @ts-expect-error: Handler может получить Animal без bark
+// @ts-expect-error: intentional type error
 const handler: Handler = onlyDogs;
 ```
 
-Не обязательно произносить «контравариантность». Достаточно объяснить, какие значения вызывающий код имеет право передать и способен ли callback их обработать.
+## Practice
 
-## Практика
+Create a handler dictionary for added and removed events. added has a numeric metric; removed has a reason. Each handler must accept only its event member.
 
-Напиши тип словаря обработчиков для событий added и removed. У added есть price, у removed — reason. Каждый обработчик должен получать только свой вариант события. Подсказка: keyof для словаря, Extract для выбора варианта union.
+### Spoiler
 
-### Спойлер
+Map over Event["kind"] and use Extract<Event, {kind: K}> for each handler argument. Dynamic `handlers[event.kind](event)` can lose the relationship in the checker; a switch dispatch is often clearer than hiding the issue with any.
 
 ```ts check
 type Event =
@@ -164,12 +138,25 @@ const handlers: Handlers = {
   added: event => console.log(event.price),
   removed: event => console.log(event.reason),
 };
+
+function dispatch(event: Event): void {
+  switch (event.kind) {
+    case "added": handlers.added(event); return;
+    case "removed": handlers.removed(event); return;
+    default: {
+      const unreachable: never = event;
+      throw new Error(`Unexpected event: ${String(unreachable)}`);
+    }
+  }
+}
 ```
 
-Тип обработчиков корректен. Но динамический вызов `handlers[event.kind](event)` может потерять корреляцию вариантов для компилятора. Проще dispatch через switch с конкретными kind, чем скрывать проблему через any. Сложные generic-dispatch abstractions не обязательны для этой задачи.
+## Check understanding
 
-## Проверка понимания
+Explain every type parameter, the runtime guarantee of a parser and when a union, overload or generic is the simplest contract. If the helper type is harder than the function, reconsider the API.
 
-Ты можешь объяснить каждый параметр типа, назвать runtime-гарантию parser и выбрать между union, overload и generic. Если utility type сложнее всей функции, попробуй упростить API.
+## Official references
 
-Дополнительные справочники: [Generics](https://www.typescriptlang.org/docs/handbook/2/generics.html), [Conditional types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html), [Utility types](https://www.typescriptlang.org/docs/handbook/utility-types.html).
+- [TypeScript: generics](https://www.typescriptlang.org/docs/handbook/2/generics.html)
+- [TypeScript: conditional-types](https://www.typescriptlang.org/docs/handbook/2/conditional-types.html)
+- [TypeScript: utility-types](https://www.typescriptlang.org/docs/handbook/utility-types.html)

@@ -22,7 +22,7 @@ npm start
 
 Открыть http://127.0.0.1:4173/ru/. Используйте HTTP-сервер: браузерные модули не рассчитаны на открытие через file://.
 
-Исходники: `lessons/*.md` — русский, `lessons/en/` и `lessons/es/` — переводы; `content/` — общая практика, вопросы и интерфейс. Реализации — `examples/`. После правок выполните `npm run build`.
+Исходники: `lessons/*.md` — канонический английский, `lessons/ru/` и `lessons/es/` — переводы; `content/` — общая практика, вопросы и интерфейс. Реализации — `examples/`. После правок выполните `npm run build`.
 
 [Правила вклада](CONTRIBUTING.md) · [Общие задания](docs/DOMAIN-PRACTICE.md) · [Аудит](docs/AUDIT.md) · [Оценка](docs/EVALUATION.md)
 

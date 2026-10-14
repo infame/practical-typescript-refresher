@@ -1,10 +1,10 @@
-# Загрузка данных: страницы, timeout и retry
+# Fetching data: pages, timeouts and retries
 
-Цель: загрузить данные из внешнего API так, чтобы частичный сбой не превращался в молчаливую потерю данных. Здесь важны границы ответственности: транспорт, проверка данных, обработка и сохранение прогресса.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. HTTP-ошибка не всегда rejection
+## HTTP failure is not necessarily rejection
 
-fetch обычно отклоняется при сетевой ошибке или отмене, но HTTP 404/429/500 возвращает Response. Нужно проверить response.ok. Парсинг JSON тоже может завершиться ошибкой, и успешный JSON ещё не гарантирует нужную структуру.
+fetch can resolve normally for 404, 429 or 500. Check response.ok or status, then parse the body and validate it as a separate step. A timeout must cancel or otherwise bound the operation; Promise.race alone only stops waiting and leaves the losing work running. Pass an AbortSignal to supported operations and clean up timers in finally. The examples are patterns, not a universal production retry policy.
 
 ```ts
 async function fetchJson(url: string, timeoutMs: number): Promise<unknown> {
@@ -27,15 +27,9 @@ async function fetchJson(url: string, timeoutMs: number): Promise<unknown> {
 }
 ```
 
-Timer действует и во время чтения тела, потому что response.json ожидается внутри try. Это учебный GET-helper: для политики retry лучше отдельный HttpError с числовым status и Retry-After, а не разбор строки message. Очень большие timeout нужно ограничивать с учётом диапазона таймеров runtime.
+## Which failures to retry
 
-Promise.race с таймером только прекращает ожидание победившего результата; сам запрос автоматически не отменяется. AbortSignal передаёт запрос на отмену поддерживающей его операции. Он не откатывает уже выполненную запись на удалённом сервере. Таймер также не способен прервать блокирующий синхронный JS.
-
-## 2. Какие ошибки повторять
-
-Обычно имеет смысл повторять временные сетевые сбои, 429 и некоторые 5xx. Ошибка валидации или 400 из-за неверного запроса чаще требует исправления данных. 401 требует решения вопроса авторизации, а не бесконечного повторения того же запроса.
-
-Повтор безопасен только с учётом операции. GET обычно допускает повтор, но POST с побочным эффектом может требовать idempotency key. Timeout записи не доказывает, что запись не произошла: сервер мог успеть сохранить данные, а ответ потерялся.
+Retry only failures that the operation contract treats as transient and safe. Typical candidates include selected network failures, 429 and selected 5xx responses; validation errors and most 4xx responses usually need a changed request. Use bounded attempts, a total time budget, exponential backoff and jitter; consider Retry-After. A retry can duplicate a write whose response was lost, so idempotency belongs in the design. Avoid multiplying retries across layers.
 
 ```ts
 const sleep = (ms: number) =>
@@ -62,13 +56,9 @@ async function retry<T>(
 }
 ```
 
-attempts включает первую попытку: attempts 3 — максимум три вызова, не четыре. Нужна функция, создающая новую операцию: повторное ожидание одного rejected Promise не отправляет новый запрос.
+## Cursor pagination
 
-Exponential backoff увеличивает паузы; jitter разносит клиентов во времени. Для 429 учитывай Retry-After, который может быть числом секунд или HTTP-датой. Отдельно ограничивай весь бюджет времени: пять попыток по 10 секунд плюс паузы могут превысить срок запроса. Отмена пользователя должна прекращать и retry, и ожидание паузы; учебный sleep выше этого не реализует.
-
-## 3. Cursor pagination
-
-Cursor следующей страницы обычно узнаётся только после текущего ответа, поэтому нельзя просто запустить все страницы одновременно. Внутри страницы записи можно обрабатывать через mapLimit.
+Read a page, process it, then advance to its next cursor. Detect repeated cursors instead of looping forever. Cursor semantics and snapshot consistency come from the API; deduplication cannot recover records never delivered. Decide whether individual page failures stop the import, retry that page or produce a resumable report. Do not advance the checkpoint before the page has been durably processed.
 
 ```ts
 type Page<T> = { items: T[]; nextCursor: string | null };
@@ -89,30 +79,24 @@ async function* pages<T>(
 }
 ```
 
-`null` — конец по нашему контракту. Проверка через `if (!nextCursor)` была бы неверной, если пустая строка является допустимым cursor. Пустая страница сама по себе не обязательно означает конец.
-
 ```ts
 for await (const batch of pages(loadPage)) {
   await mapLimit(batch, 8, processRecord);
 }
 ```
 
-Здесь следующая страница не загружается, пока текущая не обработана. Это простой способ не накапливать неограниченное количество работы. Память под записи ограничена страницей и её обработкой, но Set для защиты от циклов растёт с количеством cursors; при очень длинном импорте нужен отдельный ограниченный подход или лимит страниц.
+## Checkpoint and backpressure
 
-## 4. Checkpoint и backpressure
+Limit processing per page and persist the cursor after successful processing. This bounds memory without retaining the entire dataset. In a stream, consumers must slow producers or buffer only within a declared bound. A checkpoint should correspond to completed durable effects, not merely received data. Recovery must tolerate replay of already-completed work.
 
-Если записать checkpoint до успешной обработки страницы, падение может привести к пропуску данных. Если после — падение между обработкой и checkpoint приведёт к повторной обработке. Обычно выбирают второй вариант вместе с идемпотентностью. Это позволяет восстановиться без потери, хотя повторная доставка возможна.
+## Practice
 
-При частичных ошибках реши: не продвигать checkpoint и повторить страницу либо надёжно сохранить неуспешные записи в retry-очередь перед продвижением. Просто вывести ошибку в console и перейти дальше — потеря данных.
+An API returns an endless repeated cursor and sometimes 429. What state should the importer keep, which failures are retried, and when is the checkpoint written?
 
-Для больших файлов используй streams/async iteration вместо чтения всего файла в память. Backpressure означает, что медленный потребитель ограничивает скорость производителя. Node pipeline помогает связывать потоки и передавать ошибки; детали API — в [официальной документации Node streams](https://nodejs.org/api/stream.html).
+### Spoiler
 
-## Практика
+Keep visited cursors or another explicit progress guard, bound retries and respect the operation time budget. Process the current page with a limiter, then commit its checkpoint. Retry a transient page fetch; do not hide malformed payloads as successful empty pages. Ensure processing is replay-safe before relying on checkpoints.
 
-Страница содержит 100 записей. 99 сохранены, одна упала. Ты уже получил nextCursor. Можно ли его сохранить и идти дальше? Что будет, если вместо этого повторить всю страницу?
+## Official references
 
-### Спойлер
-
-Продвигать cursor безопасно, только если неуспешная запись уже надёжно поставлена на повтор или контракт допускает её пропуск. Повтор всей страницы допустим при идемпотентных записях: 99 обработанных событий не должны создавать повторные эффекты. Нужны счётчики applied/skipped/failed и контекст ошибки, чтобы не путать успешную загрузку с частичной.
-
-> I'll separate transport retries from record validation, process one page with bounded concurrency, and advance the checkpoint only after the page has been durably handled.
+- [Node.js: stream](https://nodejs.org/api/stream.html)

@@ -1,10 +1,10 @@
-# Алгоритмические шаблоны на TypeScript
+# Algorithm patterns in TypeScript
 
-Цель: узнавать структуру задачи и спокойно писать базовое решение. Ниже тренировочные шаблоны для практических задач. Всегда сначала уточни контракт и оцени простое решение.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Hash map: Two Sum
+## Hash map: Two Sum
 
-Нужно найти индексы двух разных элементов, сумма которых равна target. Для каждого числа ищем дополнение среди уже просмотренных. Проверка до вставки не позволяет использовать один элемент дважды.
+Store previously seen values with their indices. For each value check the needed complement before inserting the current index; this prevents using the same element twice. Clarify whether one answer or all pairs are required and how duplicates should behave. Expected O(n) lookups replace the quadratic nested loop, with O(n) extra space.
 
 ```ts
 function twoSum(nums: readonly number[], target: number): [number, number] | null {
@@ -18,11 +18,9 @@ function twoSum(nums: readonly number[], target: number): [number, number] | nul
 }
 ```
 
-Время O(n), память O(n). Не пиши `if (previous)`: индекс 0 допустим. Для `[3, 3]`, target 6 возвращаем `[0, 1]`. Уточни, нужен один ответ или все пары: это разные задачи.
+## Two pointers on sorted input
 
-## 2. Two pointers на отсортированном массиве
-
-Если числа уже отсортированы, держим указатели на концах. Сумма слишком мала — увеличиваем левый элемент; слишком велика — уменьшаем правый. Так отбрасываем заведомо неподходящие пары.
+Move the left or right pointer according to whether the current sum is below or above the target. This depends on sorted input: verify the precondition, or account for sorting and original-index reconstruction. Do not copy a pointer pattern into an unsorted problem without its invariant.
 
 ```ts
 function hasPair(sorted: readonly number[], target: number): boolean {
@@ -38,11 +36,9 @@ function hasPair(sorted: readonly number[], target: number): boolean {
 }
 ```
 
-Non-null assertions здесь опираются на доказанные границы цикла и плотный массив; это не способ скрыть отсутствие проверки внешних данных. Время O(n), дополнительная память O(1). Если пришлось сначала сортировать, учти O(n log n) и потерю исходных индексов.
+## Sliding window
 
-## 3. Sliding window: самая длинная подстрока без повторов
-
-Окно хранит диапазон, в котором символы уникальны. Правый край расширяется на каждом шаге; левый перескакивает за предыдущее вхождение повторившегося символа, но никогда не движется назад.
+Maintain a window with no repeated characters. Record each last-seen position and move the left edge only forward using max; otherwise a repeat before the current window can incorrectly move the edge backward. JavaScript string indexing uses UTF-16 code units, not user-perceived graphemes. State the text model or use an appropriate segmentation strategy.
 
 ```ts
 function longestUnique(text: string): number {
@@ -61,13 +57,9 @@ function longestUnique(text: string): number {
 }
 ```
 
-O(n) по числу Unicode code points. `for...of` идёт по code points, не по UTF-16 units, но составной видимый символ с модификаторами может включать несколько code points. Для задачи уточни ASCII/code points/graphemes. Не усложняй без требования, но знай границу.
+## Stack: matching brackets
 
-Почему Math.max? В `abba` последнее a было до текущего левого края. Без max окно ошибочно сдвинется назад.
-
-## 4. Stack: скобки
-
-Для открывающей скобки кладём ожидаемую закрывающую. Для закрывающей проверяем вершину. Пустой стек в конце обязателен: строка `((` не должна пройти.
+Push expected closing brackets, then compare each closing token with the stack top. Reject mismatches and a nonempty stack at the end. Define behavior for non-bracket characters. Stack operations are constant-time at the end of an array; shift at the front would repeatedly move elements.
 
 ```ts
 function balanced(text: string): boolean {
@@ -83,11 +75,9 @@ function balanced(text: string): boolean {
 }
 ```
 
-Этот контракт игнорирует прочие символы. Если вход должен состоять только из скобок, неизвестные символы надо отвергать. Время O(n), память O(n).
+## Merge intervals
 
-## 5. Интервалы
-
-Для объединения диапазонов отсортируй по началу. Держи последний объединённый диапазон. Если следующий пересекается, расширь конец до максимального; иначе начни новый.
+Sort a copy by start, then merge when the next interval overlaps according to the endpoint policy. Extend the current end with max; directly assigning the next end breaks nested intervals. Clarify whether touching intervals merge and whether endpoints are inclusive. Sorting makes the overall cost O(n log n).
 
 ```ts
 function mergeIntervals(input: readonly (readonly [number, number])[]): [number, number][] {
@@ -105,9 +95,9 @@ function mergeIntervals(input: readonly (readonly [number, number])[]): [number,
 }
 ```
 
-Входные пары не мутируем. Здесь касающиеся интервалы объединяются. Для полуоткрытых диапазонов и иной семантики касания сравнение нужно изменить. Предполагаем start ≤ end. Сложность O(n log n).
+## Binary search: first value at least target
 
-## 6. Binary search: первая позиция не меньше target
+Use a half-open interval [left, right), with right initialized to length. Keep the answer inside the search interval and shrink one side each iteration. Return length if no value qualifies. The midpoint must use the current bounds; test empty input, first and last positions and a target beyond every value.
 
 ```ts
 function lowerBound(values: readonly number[], target: number): number {
@@ -122,24 +112,18 @@ function lowerBound(values: readonly number[], target: number): number {
 }
 ```
 
-Интервал поиска полуоткрытый `[left, right)`. Ответ может равняться длине: все элементы меньше target. Проверяй пустой массив, значение до всех, после всех и дубликаты. Не смешивай разные варианты границ из разных шаблонов.
+## BFS, DFS and heaps
 
-## 7. BFS, DFS и heap
+BFS explores by levels and finds shortest paths only in an unweighted graph. DFS is useful for reachability and cycle reasoning. Mark visited nodes at enqueue time to avoid duplicate queue growth and use a head index instead of shift. A heap supports repeated priority extraction in O(log n); it is not a sorted array. This chapter introduces these patterns, but does not provide a complete dynamic-programming or competitive-programming curriculum.
 
-BFS — очередь, подходит для кратчайшего пути по количеству рёбер в невзвешенном графе. Помечай вершину посещённой при добавлении в очередь, иначе она попадёт туда много раз. Вместо повторного `shift()` используй массив и индекс head: `while (head < queue.length) { const node = queue[head++]; ... }`. Для долгоживущей очереди учитывай освобождение памяти.
+## Practice
 
-DFS — стек или рекурсия, подходит для обхода и связности. Глубокая рекурсия может переполнить стек JS. Для цикла в ориентированном графе одного visited недостаточно: нужно различать вершины в текущем пути и полностью обработанные.
+Solve Two Sum on [2,7,11,15] with target 9; longest nonrepeating substring in "abba"; first index at least 5 in [1,5,5,9]; merge [1,6] and [2,3].
 
-Для top K на большом потоке min-heap размера K даёт O(n log K), память O(K). В стандартном JS нет встроенного общего PriorityQueue: уточни доступные библиотеки. На маленьком массиве сортировка часто проще и достаточна. Сложный DP оставь после уверенного освоения этих шаблонов.
+### Spoiler
 
-## Практика
+Results are indices [0,1], length 2, index 1 and [1,6]. Write the loop invariant before optimizing. Use max when extending the interval and when moving a sliding-window boundary.
 
-Без выполнения: `twoSum([2, 7, 2], 4)`; `longestUnique("abba")`; `lowerBound([1, 3, 3, 8], 3)`; объединение `[1,4], [2,3], [4,6]`.
+## When stuck
 
-### Спойлер
-
-Индексы `[0, 2]`; длина 2; позиция 1; интервал `[1,6]`. Во вложенном интервале нельзя просто присвоить end следующего диапазона: поэтому используется max.
-
-## Как не зависнуть
-
-Произнеси простой вариант, назови повторяющуюся работу, выбери структуру для её устранения. Если не видишь оптимизацию, напиши корректный простой код и проверь примеры. Рабочее решение с честной сложностью лучше, чем молчание в поисках идеального шаблона.
+State a correct simple solution, estimate its cost, identify repeated work, then select the data structure that removes it. Trace a small counterexample. Recognizing a pattern is not enough: explain why its invariant matches this task.

@@ -1,10 +1,10 @@
-# TypeScript для практического задания
+# Practical TypeScript contracts
 
-Цель: использовать типы, чтобы быстрее писать правильный код. Здесь четыре разбора: неизвестный вход, варианты состояния, generics и типы для API. Примеры предполагают strict mode.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Unknown, any и narrowing
+## Unknown, any and narrowing
 
-`any` выключает существенную часть проверок. `unknown` позволяет хранить что угодно, но требует проверить значение перед использованием. Внешний JSON удобно сразу присвоить переменной unknown.
+any disables useful checks. unknown can hold anything but requires evidence before use. Validate external input at the boundary: exclude null and arrays, check required fields, check their types and business constraints, then return a normalized object. typeof null is object. An as assertion neither checks nor converts data. JSON.parse can fail on syntax before schema validation even starts. A parser is useful for normalization and error messages; a type guard is useful for branching, but its implementation is a promise the compiler trusts.
 
 ```ts check
 type Listing = { id: string; price: number };
@@ -24,13 +24,9 @@ function parseListing(value: unknown): Listing {
 }
 ```
 
-`typeof null` возвращает `"object"`, поэтому проверка объекта обязательно исключает null. TypeScript сужает тип по веткам: сначала объект, затем наличие поля, затем тип поля. Сам `as Listing` не проверяет и не преобразует данные. `JSON.parse` может отдельно выбросить ошибку синтаксиса ещё до проверки структуры.
+## Discriminated unions
 
-Type guard возвращает boolean с обещанием `value is Listing`. При true компилятор доверяет этому обещанию; реализацию guard он не доказывает. Parser удобнее, когда нужны нормализация и сообщения об ошибках. Guard удобнее для разветвления, но `records.filter(isListing)` молча выбрасывает плохие записи — это должно соответствовать контракту.
-
-## 2. Discriminated unions: допустимые состояния
-
-Посмотри на тип результата:
+A boolean success flag with optional data and error permits impossible combinations. Instead make each allowed state a union member with a literal discriminator and required payload. Checking the discriminator narrows to the correct member. never represents an exhausted set of possibilities and supports a compile-time exhaustiveness check. It does not validate an external payload. Return expected per-record failures as values when a batch should continue; throw when the enclosing operation cannot proceed.
 
 ```ts
 type WeakResult<T> = {
@@ -39,10 +35,6 @@ type WeakResult<T> = {
   error?: string;
 };
 ```
-
-Он допускает `success: true` без data, одновременно data и error, либо вообще отсутствие обоих. В каждом месте использования приходится додумывать правила.
-
-Лучше перечислить два допустимых состояния:
 
 ```ts
 type Result<T> =
@@ -56,10 +48,6 @@ function describe(result: Result<Listing>): string {
   return result.error;
 }
 ```
-
-`ok` — дискриминатор: общее поле с разными литеральными значениями. Проверив его, компилятор знает, какой вариант перед ним. Для успешного результата value обязателен; для ошибки его нет.
-
-Та же идея для событий:
 
 ```ts check
 type ListingEvent =
@@ -79,13 +67,9 @@ function summarize(event: ListingEvent): string {
 }
 ```
 
-`never` означает, что допустимых значений уже не осталось. Если добавить третий вариант события и забыть обработчик, вызов assertNever перестанет компилироваться. Это проверка полноты обработки. Она не заменяет runtime-валидацию внешнего payload.
+## Generics preserve relationships
 
-Result подходит для ожидаемых ошибок конкретной записи: собрать отчёт и продолжить. Исключение удобно для ситуации, когда текущая операция не может нормально продолжаться. Главное — явный контракт, а не правило «всегда только Result» или «всегда throw».
-
-## 3. Generics: сохранить связь типов
-
-Generic нужен, когда функция делает одну и ту же работу с разными типами, но должна сохранить информацию об этих типах.
+T links element input to output, K links the selected key to the Map key. Usually inference supplies both. any loses the relationship and returning unknown loses information already known to the caller. K extends keyof T restricts a key to the object type; T[K] recovers its value type. This extends is a type constraint, not runtime inheritance. Add a generic parameter only when it connects meaningful positions in the API.
 
 ```ts check
 function groupBy<T, K>(
@@ -108,21 +92,17 @@ const byPrice = groupBy(
 ); // Map<number, { id: string; price: number }[]>
 ```
 
-T — тип элемента, K — тип ключа. Обычно они выводятся из аргументов, явно писать их не требуется. `any` потерял бы связь входа с выходом. `unknown` на выходе заставил бы снова проверять уже известные данные.
-
-`keyof T` — объединение имён полей типа T; `T[K]` — тип значения выбранного поля.
-
 ```ts check
 function getField<T, K extends keyof T>(obj: T, key: K): T[K] {
   return obj[key];
 }
 const price = getField({ id: "A", price: 500 }, "price"); // number
-// getField({ id: "A" }, "missing"); // ошибка компиляции
+
 ```
 
-`extends` здесь — ограничение параметра типа: K может быть только ключом T. Это не наследование объектов во время исполнения.
+## Utility types and API boundaries
 
-## 4. Utility types и практический контракт
+Pick selects properties, Omit removes them, Partial makes them optional and Readonly prevents assignment through that type. None removes runtime fields or deeply freezes an object. Restrict a patch to editable fields instead of Partial of an entire entity. Record with a finite key union is useful; sparse string dictionaries need absent-value handling. type can describe unions and tuples; interface describes extensible object contracts. as const preserves literal information; satisfies checks compatibility without runtime validation. Catch values are unknown: narrow Error or stringify the alternative.
 
 ```ts check
 type Listing = { id: string; price: number; source: string };
@@ -132,14 +112,6 @@ type PatchListing = Partial<Pick<Listing, "price">>;
 type FrozenListing = Readonly<Listing>;
 ```
 
-Pick выбирает поля, Omit исключает, Partial делает поля необязательными, Readonly запрещает присваивание через этот тип. Они не удаляют реальные поля из объектов и не выполняют глубокую заморозку. Для PATCH лучше перечислить разрешённые поля, чем делать `Partial<Listing>` и случайно разрешать менять идентификатор.
-
-`Record<"queued" | "done", number>` полезен для фиксированного набора ключей. `Record<string, Listing>` выглядит как объект, у которого по любой строке есть Listing, хотя на практике ключ может отсутствовать. Для разреженного индекса используй Map, `Partial<Record<string, Listing>>` или учитывай undefined; настройка noUncheckedIndexedAccess тоже помогает ловить опасные обращения по индексу.
-
-`type` подходит для union, tuple и alias; `interface` удобен для объектных контрактов и расширения. Для обычного объекта оба подходят. Не трать интервью на спор о стиле.
-
-`as const` сохраняет литеральные типы и readonly-представление литерала; `satisfies` проверяет совместимость выражения с типом, не заменяя его тип просто целевым. Они не являются runtime-валидацией.
-
 ```ts check
 const handlers = {
   queued: "Pending",
@@ -147,13 +119,13 @@ const handlers = {
 } satisfies Record<"queued" | "done", string>;
 ```
 
-В catch ошибка имеет неизвестный тип при strict-настройках: `error instanceof Error ? error.message : String(error)`. Не предполагай, что JavaScript разрешает бросать только Error.
+## Practice
 
-## Практика
+Represent three import outcomes: applied, stale, failed. Every outcome has an ID; only failed has a message. Write a function counting applied results.
 
-Спроектируй результат импорта одной записи: успешно применена, пропущена как устаревшая или отклонена с причиной. У всех вариантов должен быть ID; только у ошибки — message. Напиши функцию, считающую только применённые записи.
+### Spoiler
 
-### Спойлер
+A union discriminated by status makes failed without message invalid and exposes message after narrowing. Count only status === "applied". Add skip reasons to the stale member if needed instead of introducing optional fields on every outcome.
 
 ```ts check
 type ImportResult =
@@ -166,10 +138,21 @@ function countApplied(results: readonly ImportResult[]): number {
 }
 ```
 
-Нельзя случайно создать failed без message. При обработке `status === "failed"` message доступно без `!` и `as`. Если нужна причина пропуска, добавь её именно в stale-вариант, а не optional-поле для всех состояний.
+#### A plausible wrong solution: assert external data
 
-## Что сказать на интервью
+```ts check
+type Item = { id: string; price: number };
+const raw: unknown = { id: "A", price: "free" };
+const item = raw as Item;
+const total = item.price + 1; // runtime: "free1", not a number.
+```
 
-> I'll validate external input at the boundary and represent success and failure as distinct types, so callers have to handle both cases.
+This code typechecks, yet its result violates the numeric contract. as changes the checker's view and leaves the string untouched. Narrow object shape, reject null/arrays and check each required field before constructing a fresh Item. Testing only valid JSON misses this bug: include strings, missing fields, zero and nonfinite numbers.
 
-Для сверки поведения narrowing: [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/2/narrowing.html). Это справочник, а не обязательное чтение всей главы перед практикой.
+## Explain the boundary
+
+State where validation happens and which errors are expected. The useful guarantee is that callers receive a validated value or an explicit failure, not that assertions make unknown data safe.
+
+## Official references
+
+- [TypeScript: narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html)

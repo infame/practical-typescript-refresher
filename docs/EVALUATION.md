@@ -1,61 +1,61 @@
-# Проверка навыка после курса
+# Task-solving evaluation after studying the material
 
-Дата эксперимента: 2026-10-02. Результат: **участник с курсом решил 6/6 задач, но контроль без курса тоже решил 6/6. Прирост от обучения не установлен.**
+Experiment date: **2026-10-02**. The participant with the material solved **6/6 tasks**, and the control without it also solved **6/6**. **A learning benefit was not established.** This report describes a frozen earlier edition, not the October 14 content release. [Original Russian report](ru/EVALUATION.md).
 
-## Метод
+## Method
 
-Две изолированные сессии AI-участников без истории разработки курса. Обоим задана роль опытного разработчика, возвращающегося к TS после перерыва; намеренно изображать ошибки запрещено.
+Two separate AI sessions had no history of developing the material. Both were given the role of an experienced developer returning to TypeScript after a break; deliberately pretending to make mistakes was prohibited.
 
-Контроль получил только спецификацию задач. Второй участник сначала получил замороженный текст всех 14 глав, затем ту же спецификацию. Участникам запрещён доступ к чужим решениям, evaluator, исходникам examples и внешнему поиску. Отдельные скрытые на момент сдачи тесты написаны оценивающей стороной и запущены после сдачи. Затем выполнен strict typecheck с noUncheckedIndexedAccess и exactOptionalPropertyTypes.
+The control received only the task specification. The other participant first received the frozen text of all 14 chapters, then the same specification. Participants were instructed not to access other submissions, the evaluator, example implementations or external search. Checks hidden at submission time were written by the evaluator and run after submission. Strict type checking with noUncheckedIndexedAccess and exactOptionalPropertyTypes followed.
 
-Это ограничение доступа к файлам по инструкции участника, а не доказанная аппаратная изоляция среды. Общая файловая система использовалась для приёма ответов. Полной гарантии отсутствия заранее известных TypeScript-знаний у модели нет.
+File access was restricted by participant instructions, not demonstrated hardware isolation. Submissions used a shared filesystem. The model's pretrained TypeScript knowledge could not be removed.
 
-## Результаты
+## Results
 
-| Задание | Без курса | С курсом | Проверок |
-|---|---:|---:|---:|
-| Проверить и нормализовать внешний пакет | Решено | Решено | 4 |
-| Применить PATCH с null/zero и копированием | Решено | Решено | 3 |
-| Совместить dedup, count и latest по составному ключу | Решено | Решено | 4 |
-| mapLimit с остановкой и ожиданием active операций | Решено | Решено | 5 |
-| Async-кэш с in-flight sharing и retry после rejection | Решено | Решено | 4 |
-| Частичный импорт с ограничением concurrency | Решено | Решено | 4 |
-| **Итого** | **6/6 задач; 24/24 проверки** | **6/6 задач; 24/24 проверки** | **24** |
-| Strict typecheck | Пройден | Пройден | Отдельная проверка |
-| 12 вопросов о поведении | 12 корректных ответов | 12 корректных ответов | Ручная оценка автора курса |
+| Task | Without material | With material | Checks |
+| --- | --- | --- | --- |
+| Validate and normalize an external packet | Solved | Solved | 4 |
+| Apply PATCH with null/zero and independent copies | Solved | Solved | 3 |
+| Combine scoped deduplication, counting and latest version | Solved | Solved | 4 |
+| mapLimit: stop scheduling and drain active operations | Solved | Solved | 5 |
+| Async cache: share in-flight calls and evict rejections | Solved | Solved | 4 |
+| Partial import with bounded concurrency | Solved | Solved | 4 |
+| **Total** | **6/6 tasks; 24/24 checks** | **6/6 tasks; 24/24 checks** | **24** |
+| Strict type checking | Passed | Passed | Separate |
+| 12 behavior questions | 12 correct answers | 12 correct answers | Manual author assessment |
 
-Машиночитаемые результаты и hashes замороженных входов — в evaluation-results.json. Runtime-проверки сгруппированы: например, одна проверка parser содержит несколько невалидных входов. Число 24 не означает 24 независимых концепта.
+Machine-readable results and hashes of frozen inputs are in [evaluation-results.json](evaluation-results.json). Checks are grouped: one parser check, for example, includes several invalid inputs. Twenty-four checks do not mean twenty-four independent concepts. Recorded results and hashes are preserved unchanged; this translation does not redefine the experiment inputs.
 
-## Что результаты позволяют сказать
+## Interpretation and limits
 
-Материал совместим с решениями выбранных задач. Участник с курсом связывает рассуждения с конкретными разделами. Реализации выдержали ноль, null, строковые цены, delimiter в ID, разный порядок завершения, синхронный throw, rejection undefined и partial failure.
+The material is compatible with solutions to the chosen tasks. The participant with it associated reasoning with particular sections. Implementations handled zero, null, string prices, delimiters in IDs, out-of-order completion, synchronous throws, rejection with undefined and partial failures.
 
-При этом роль «подзабыл» не удаляет знания предобученной модели. Контроль уже на потолке. Поэтому эксперимент **не доказывает**, что новый читатель после курса научится решать шесть задач, и не измеряет пользу относительно отсутствия курса.
+The role “returning after a break” does not erase pretrained knowledge. The control was already at the ceiling. The experiment does not establish that a new reader will learn to solve six tasks or measure a benefit over receiving no material.
 
-Несколько задач являются близким переносом разобранных решений, а не новым алгоритмом: PATCH, mapLimit и memoization похожи на главы. Совместная дедупликация/подсчёт/выбор версии и строгий parser требуют адаптации контракта. Не называть весь benchmark проверкой далёкого переноса.
+Several tasks test near transfer from explained solutions: PATCH, mapLimit and memoization resemble chapters. Combined deduplication/counting/version selection and the strict parser require adapting the contract. Do not describe the entire benchmark as far transfer.
 
-Ручную оценку знаний проводил автор курса, без независимого слепого оценщика. Один прогон на условие не даёт статистической уверенности и не измеряет устойчивость к другим формулировкам.
+Knowledge answers were assessed manually by the material's author, not an independent blind assessor. One run per condition provides no statistical confidence or robustness estimate for alternative wording.
 
-## Что изменено по итогам
+## Changes after the experiment
 
-Участник отметил, что явный факт `typeof null === "object"` полезнее, чем намёк через parser. Он добавлен в объяснение. Уточнена стоимость составных строковых ключей: линейная оценка по числу записей предполагает ограниченный размер ID; построение строки также зависит от длины.
+The participant found an explicit statement of `typeof null === "object"` more useful than an implicit parser check; it was added. The cost of compound string keys was clarified: linear estimates by record count assume bounded ID length, and constructing keys also depends on that length.
 
-Это небольшие поясняющие изменения после замороженного текста эксперимента. Повторный прогон не выдан за исходный. Четыре новые главы появились до передачи материала участнику.
+These small edits followed the frozen input. No later run was presented as the original result. Four additional chapters existed before material was supplied to the participant. Subsequent translations, reader changes and content additions have not been measured by this experiment.
 
-## Как получить более убедительную оценку
+## A more informative evaluation
 
-1. Найти реальных опытных разработчиков, которые давно не писали TS; измерить стартовое решение на задачах без подсказок.
-2. После курса дать эквивалентные новые задачи другой формы с теми же концептами, а не повторить готовые решения.
-3. Считать полностью решённые задачи, время, подсказки и причины ошибок. Разделять runtime, typecheck и обоснование контракта.
-4. Через несколько дней проверить удержание навыка на третьем наборе задач.
-5. Проверять по заранее заданным критериям и сохранять неуспешные попытки, а не публиковать только лучший прогон.
+1. Recruit experienced people who have not used TS recently and measure initial independent solutions.
+2. After studying, give equivalent new tasks with different surface forms, rather than repeating worked examples.
+3. Record complete solutions, time, hints and error causes. Separate runtime behavior, type checking and reasoning about contracts.
+4. Check retention after several days using a third task set.
+5. Use predetermined criteria and retain failed attempts rather than reporting only the best run.
 
-## Проверить своё решение
+## Try the benchmark
 
-Спецификация: benchmarks/TASKS.md. Экспортируй шесть функций и указанные типы в отдельный solution.ts.
+Specification: [benchmarks/TASKS.md](../benchmarks/TASKS.md). Export its six functions and named types in a separate solution.ts.
 
 ```sh
 npm run eval -- /absolute/path/to/solution.ts
 ```
 
-Evaluator выполняет предоставленный код на вашем компьютере и проверяет типы. Используйте собственную или проверенную реализацию. Теперь тесты публичны; если изучить их заранее, это практика с известными проверками, а не слепой эксперимент.
+The evaluator executes submitted code on your machine; use your own or reviewed code. Tests are now public. Inspecting them before solving makes this known-test practice, not a blind evaluation.

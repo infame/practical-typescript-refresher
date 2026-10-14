@@ -1,14 +1,14 @@
-# Практикум: восстановить навык написания
+# Workshop: write the code yourself
 
-Чтение создаёт узнавание, а упражнение показывает, можешь ли ты восстановить решение без подсказки. Здесь четыре задания с полными ответами. Решения также находятся в `examples/workshop.ts` и проверяются тестами. Не читай этот файл до собственной попытки.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Внешняя запись: parser
+## Parse an external record
 
-Время: 15 минут. Напиши parsePriceRecord(raw: unknown), возвращающий новый объект `{id:string, price:number}`. ID — непустая после trim строка; верни trimmed ID. Цена — конечное неотрицательное число либо строка десятичного формата: цифры, необязательная точка и цифры после неё. Пустоту, boolean, exponent, hex, Infinity, массивы и null отклоняй. Лишние поля не возвращай. Вход не меняй.
+Implement parseRecord(unknown): { id: string; price: number | null }. Normalize a nonempty ID. Accept a finite nonnegative numeric metric, null, or a trimmed strict decimal string. Reject booleans, empty strings, hexadecimal, exponents and Infinity. Return a fresh object and ignore unrelated fields. Define your accepted decimal grammar before converting; the examples use digits with an optional nonempty fractional part.
 
-Почему отдельный формат? Number понимает больше представлений, чем разрешено в этом контракте. Парсинг нужно подчинить входному протоколу.
+### Spoiler
 
-### Спойлер
+Check object shape, ID type and normalized content. Handle null separately; for strings validate the full decimal syntax before Number. Then check finiteness and sign. Test zero, whitespace, .5 versus 0.5, exponent syntax and unsafe coercion shortcuts. The reference functions are in examples/workshop.ts.
 
 ```ts
 export function parsePriceRecord(raw: unknown): { id: string; price: number } {
@@ -32,13 +32,13 @@ export function parsePriceRecord(raw: unknown): { id: string; price: number } {
 }
 ```
 
-Проверь ноль числом и строкой, пробелы вокруг допустимого значения, пустую строку, `"1e3"`, `"12usd"`, очень длинную строку с переполнением в Infinity. Regex задаёт формат, а isFinite проверяет числовой результат. Это два разных слоя.
+## PATCH without mutation
 
-## 2. PATCH без случайной мутации
+Apply a patch to an already-validated entity. Missing fields preserve values, null clears the nullable metric, zero is valid, and an empty tags array clears tags. Return a fresh object and a fresh tags array even when the patch is empty. Explicit undefined is prohibited in the patch contract.
 
-Время: 10 минут. Current содержит id, price:number|null, tags:readonly string[]. Patch может содержать price и tags. Отсутствие — сохранить; null цены — очистить; ноль — установить. Возвращаем новый объект и новый массив tags даже при отсутствии tags в patch.
+### Spoiler
 
-### Спойлер
+Choose nullable fields with an explicit undefined check, not ??, because null is meaningful. Clone the selected tags array. Object spread alone leaves nested references shared. Test mutation of the result and of a supplied patch array after the call.
 
 ```ts
 export type Current = { id: string; price: number | null; tags: readonly string[] };
@@ -53,15 +53,25 @@ export function applyPatch(current: Current, patch: Patch): Current {
 }
 ```
 
-Не делай `{...current,...patch}` без разбора семантики: это оставит общую ссылку на массив. Вход здесь уже типизирован и валиден. Parser для неизвестного PATCH был бы отдельной задачей.
+#### A plausible wrong solution: nullish fallback and shallow copying
 
-## 3. Кэш async-запросов и concurrent callers
+```ts check
+const current = { id: "A", price: 10, tags: ["old"] };
+const patch: { price?: number | null } = { price: null };
+const wrong = { ...current, price: patch.price ?? current.price };
+wrong.tags.push("new");
+// wrong.price is 10, not null; current.tags is now ["old", "new"].
+```
 
-Время: 20 минут. Напиши memoizeAsync(load), возвращающий функцию загрузки по ключу. Одновременные вызовы одного ключа должны разделять один in-flight запрос. Успешный результат кэшируется, включая undefined. После ошибки следующий вызов должен повторить запрос. Синхронный throw load должен стать rejection. TTL и отмена не нужны.
+The contract says null clears price, so ?? incorrectly turns an explicit clear into no change. Check undefined for the price field. The outer spread creates a new object but shares tags: copy the selected array independently, even for an empty patch. A meaningful test asserts null and then mutates the returned tags to verify that current.tags remains unchanged. Zero, absent fields and empty replacement arrays exercise different branches.
 
-Это другая задача, чем кэширование только готового значения: два вызова могут прийти до завершения первого и оба запустить загрузку. Нужно сохранить Promise сразу.
+## Async cache and concurrent callers
 
-### Спойлер
+Implement an async memoizer that coalesces calls with the same key while loading and retains successful values, including undefined. Failed loads must be evicted so a later caller can retry. A synchronous throw also becomes a rejected promise. Define key identity, retention and invalidation separately; this small cache has no TTL or capacity policy.
+
+### Spoiler
+
+Cache the in-flight promise before other callers can start another load. Promise.resolve().then invokes the loader after the cache entry is set and captures synchronous throws. On rejection, evict that entry. Distinguish absence of an entry from a successfully cached undefined. Failed promises must not remain permanently cached.
 
 ```ts
 export function memoizeAsync<K, V>(
@@ -84,15 +94,13 @@ export function memoizeAsync<K, V>(
 }
 ```
 
-Promise создаётся и кладётся в Map до вызова load в microtask. Поэтому синхронный throw тоже попадёт в rejection, а concurrent callers найдут тот же pending. Мы проверяем Promise в Map, а не его value: успешный undefined не теряется. Catch удаляет неуспешную операцию и повторно бросает ошибку — вызывающие стороны узнают о сбое.
+## Partial failures as values
 
-Map хранит успешные Promise неограниченно. Для production-кэша обычно нужны ограничение размера, срок жизни и политика инвалидации. Если добавишь принудительную инвалидацию во время in-flight загрузки, catch старой операции не должен удалить уже созданную новую — понадобится проверка идентичности Promise перед удалением. В нашем контракте такой операции нет.
+Load IDs with bounded concurrency, preserve input positions and return a success/failure union for every ID. Continue after a rejected or synchronously thrown operation. Invalid concurrency still rejects the whole call.
 
-## 4. Частичные ошибки как данные
+### Spoiler
 
-Время: 15 минут. Есть массив ID и load(id). Верни по результату на каждый ID в исходном порядке, concurrency ограничен. Ошибка одного ID не останавливает другие. В failed верни message: Error.message либо String(error). Используй mapLimit из главы 5.
-
-### Спойлер
+Catch inside the mapLimit callback, return a discriminated failure with a normalized message, and let successful results remain values. Error or String(error) handles ordinary thrown values without assuming every exception is Error. Type the callback result union explicitly when inference widens the discriminator.
 
 ```ts
 import { mapLimit } from "./core.ts";
@@ -119,12 +127,28 @@ export function loadAll<T>(
 }
 ```
 
-Callback успешно возвращает failed-вариант вместо rejection, поэтому mapLimit продолжает обработку. Ошибка invalid limit остаётся ошибкой всего вызова. Не подменяй failed пустым value: вызывающий код должен отличать отсутствие данных от ошибки.
+## Measure the attempt
 
-## 5. Как измерять результат
+Record requirements solved, tests passed, hints used and the point where you got stuck. After reading the solution, change the input or policy and implement again from a blank file. Passing a multiple-choice diagnostic checks recognition, not independent coding. Use the domain practice task and mock interview as subsequent checks.
 
-Задача решена полностью, когда верны контракт, типы и крайние случаи. Частичный результат — полезная информация: например, основной сценарий работает, но parser принимает boolean или кэш запоминает rejection навсегда.
+## Fifteen traps: a quick return-to-TS reference
 
-Запиши число задач, решённых без ответа, и причины ошибок. После разбора попробуй новую вариацию: другую форму данных, другую политику повторов, равные версии или неизвестный thrown value. Если просто перепечатать решение, тесты станут зелёными, но перенос навыка останется непроверенным.
+Use this after your own attempt. If a row surprises you, revisit its explanation and try a different input before marking the chapter complete. It is a revision checklist, not a knowledge score.
 
-Публичный benchmark репозитория находится в [документе оценки](../docs/EVALUATION.md). Он различает тесты корректности реализаций и эксперимент с обучением: хороший пример не доказывает, что читатель научился его писать.
+| Trap | Rule and counterexample | Review |
+| --- | --- | --- |
+| `as T` | Does not check or convert JSON; validate unknown at the boundary. | [Practical TypeScript contracts](./03-typescript.md) |
+| `typeof null` | Is "object"; exclude null and arrays before checking fields. | [Practical TypeScript contracts](./03-typescript.md) |
+| `const` | Fixes a binding; a mutable property may widen to string. | [Returning to TypeScript: the language](./11-language-refresh.md) |
+| `x?: T` | Allows absence; present undefined needs an explicit union with exactOptionalPropertyTypes. | [Returning to TypeScript: the language](./11-language-refresh.md) |
+| `Readonly<T>` | Is shallow; another alias can still mutate the underlying value. | [JavaScript pitfalls in correct algorithms](./02-javascript.md) |
+| `array[0]` | Can be absent; check the value or declare a nonempty input contract. | [Compiler settings, modules and running TS](./13-tooling.md) |
+| `\|\|` / `??` | Keep a valid zero; explicit null in PATCH may mean clear, not fallback. | [Workshop: write the code yourself](./14-workshop.md) |
+| Spread | Copies one level; clone nested arrays owned by the result. | [JavaScript pitfalls in correct algorithms](./02-javascript.md) |
+| `Set<object>` | Uses reference identity; field-based dedup needs explicit keys. | [Collections and data processing](./01-collections.md) |
+| Event / entity | Use separate keys for replay removal and latest-version selection. | [Events, idempotency and database writes](./07-database.md) |
+| `sort()` | Mutates and compares strings by default; define comparator and copying policy. | [JavaScript pitfalls in correct algorithms](./02-javascript.md) |
+| `Promise.all` | Keeps input order; neither limits starts nor cancels siblings. | [Async work and the event loop](./04-async.md) |
+| Timeout | Promise.race stops waiting; cooperative cancellation must reach the operation. | [Fetching data: pages, timeouts and retries](./06-ingestion.md) |
+| Generic getter | Use K extends keyof T and T[K] to preserve the selected property type. | [Type design beyond basic generics](./12-type-design.md) |
+| Run / check | Successful execution does not imply successful type checking; run both. | [Compiler settings, modules and running TS](./13-tooling.md) |

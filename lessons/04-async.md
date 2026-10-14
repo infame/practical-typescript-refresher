@@ -1,10 +1,10 @@
-# Асинхронность и event loop
+# Async work and the event loop
 
-Цель: понимать, когда работа запускается, что именно ждёт await и что случается при ошибке. Представляй async как координацию операций, а не автоматическое выполнение JavaScript на нескольких ядрах.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Когда начинается работа
+## When work starts
 
-Вызов async-функции сразу выполняет её синхронную часть до первого await. Функция возвращает Promise. Await приостанавливает продолжение конкретной async-функции, а не весь процесс.
+A Promise executor runs immediately; an async function starts running when called and pauses at await. Collecting already-created promises does not postpone their work. To control the start, store functions or let workers call the operation. await does not turn CPU work into background parallel work.
 
 ```ts
 async function example() {
@@ -19,8 +19,6 @@ await promise;
 // A, B, C, D
 ```
 
-Даже await уже исполненного Promise переносит продолжение в microtask. Executor в `new Promise(executor)` вызывается синхронно. Сам Promise обычно представляет уже начатую работу; это не ленивое описание будущей операции.
-
 ```ts
 const first = fetchFirst();
 const second = fetchSecond();
@@ -28,9 +26,9 @@ const a = await first;
 const b = await second;
 ```
 
-Обе операции вызваны до первого await. Но такой способ ожидания неудобен для ошибок: second может отклониться до того, как до него дойдёт обработчик. Для независимых операций лучше сразу объединить их через Promise.all.
+## Sequential or concurrent
 
-## 2. Последовательно или конкурентно
+A loop with await performs operations sequentially. Promise.all can wait for independent operations concurrently and returns results in input order, not completion order. map invokes its callback for every input immediately; Promise.all is not a concurrency limiter. Decide whether dependencies require sequencing or only the returned array requires stable order.
 
 ```ts
 const results = [];
@@ -39,17 +37,9 @@ for (const item of items) {
 }
 ```
 
-Здесь одновременно активна одна операция. Это может быть правильно, если порядок обязателен или следующий шаг зависит от предыдущего. Если каждая операция занимает 100 мс, десять последовательных операций займут примерно секунду без учёта накладных расходов.
-
 ```ts
 const results = await Promise.all(items.map(processItem));
 ```
-
-`map` вызывает processItem для всех элементов; Promise.all собирает результаты. Для независимых I/O это может существенно сократить общее время. Но одновременно можно перегрузить API, connection pool или память. Promise.all не устанавливает лимит.
-
-Результаты Promise.all идут в порядке входа, даже если операции завершились иначе. При первом rejection общий Promise отклоняется. Остальные операции автоматически не отменяются и могут успеть выполнить побочные эффекты.
-
-При частичном успехе полезен Promise.allSettled:
 
 ```ts
 const outcomes = await Promise.allSettled(items.map(processItem));
@@ -59,9 +49,9 @@ for (const outcome of outcomes) {
 }
 ```
 
-Он ждёт завершения всех Promise, но тоже не ограничивает concurrency. «Дождаться всех» и «не перегрузить downstream» — две разные задачи.
+## Errors and missing await
 
-## 3. Ошибки и потерянный await
+An unawaited promise can escape try/catch, finish after the function reports success, or reject without a handler. Await the actual operation within the try block when you need to catch its rejection. Promise.all rejects on the first observed rejection but does not cancel the other operations. Promise.allSettled reports every outcome. finally is for cleanup; a return or throw inside it can override the original result.
 
 ```ts
 async function broken(items: Item[]) {
@@ -71,10 +61,6 @@ async function broken(items: Item[]) {
   return "done";
 }
 ```
-
-forEach игнорирует возвращаемые Promise. Функция вернёт done, пока сохранения ещё выполняются; ошибки могут остаться необработанными. Используй for...of с await либо Promise.all с map — в зависимости от контракта.
-
-Другой тонкий случай:
 
 ```ts
 async function load() {
@@ -86,13 +72,9 @@ async function load() {
 }
 ```
 
-Здесь await нужен, чтобы rejection попал в локальный catch. Если вернуть Promise без await, более позднее отклонение не будет поймано этим catch. В простом wrapper без локальной обработки ошибок можно просто `return fetchData()`.
+## Event-loop ordering
 
-Не превращай любую ошибку в `[]`: вызывающий код не сможет отличить «данных нет» от «сервис недоступен». Либо пробрасывай ошибку, либо возвращай явно помеченный результат.
-
-## 4. Event loop без лишней магии
-
-Синхронный JavaScript выполняется до конца текущего стека. Продолжения Promise и queueMicrotask выполняются через очередь microtasks. Таймер не прерывает текущий стек: нулевая задержка не означает «сейчас».
+Synchronous code finishes before queued promise callbacks. An await continuation runs as a microtask. Timers are scheduled later and their delay is a lower bound, not a guaranteed execution instant. A long synchronous computation blocks other callbacks; recursively scheduling microtasks can starve other work. Node has additional queues, so do not generalize a tiny browser ordering example to every Node context.
 
 ```ts
 console.log("A");
@@ -104,13 +86,9 @@ queueMicrotask(() => console.log("E"));
 console.log("F");
 ```
 
-Для этого самодостаточного примера: A, F, C, E, D, B. Первый then уже в очереди, второй then добавляется после выполнения первого, поэтому E оказывается раньше D.
+## Races on one thread
 
-Не распространяй это на все возможные сочетания Node nextTick, setImmediate, I/O callbacks и ESM/CJS: их порядок зависит от контекста. На практике важнее не блокировать event loop большим синхронным вычислением.
-
-`async function heavy() { expensiveCalculation(); }` не делает расчёт неблокирующим. Для CPU-heavy работы рассматривают worker threads или отдельные процессы. Конкурентное ожидание сети и параллельное вычисление на ядрах — разные вещи.
-
-## 5. Гонки возможны и на одном JS-потоке
+Two operations can read shared state before either resumes from await and writes it. Single-threaded JavaScript does not make a read-await-write sequence atomic. Preserve invariants with a serial queue per key, database conditional writes or an appropriate transaction. Concurrency and parallel CPU execution are different concepts.
 
 ```ts
 async function increment() {
@@ -120,18 +98,41 @@ async function increment() {
 }
 ```
 
-Два вызова могут прочитать одно значение до await и записать одинаковый результат. Чередование происходит на точках ожидания. В базе такую read-modify-write операцию часто заменяют атомарным `SET counter = counter + 1`.
+## Practice
 
-## Практика
+Predict the order of synchronous logs, Promise.then and setTimeout. Then explain why try/catch around a call without await fails to catch its later rejection.
 
-Три запроса начаты через Promise.all: A завершится через 50 мс, B отклонится через 10 мс, C сохранит запись через 80 мс. Когда сработает catch? Сохранится ли C? Как получить отчёт по всем трём?
+### Spoiler
 
-### Спойлер
+For the code above the exact order is **A, F, C, E, D, B**. A and F are synchronous. The first then queues C; queueMicrotask queues E. Only when C completes does its returned promise enqueue D, so E precedes D. The timer runs after the microtask queue drains. Wrapping CPU-heavy work in an async function does not move that work to another thread.
 
-Catch сможет сработать после rejection B, не ожидая A и C. C продолжает работу и может сохранить запись. Отмена требует отдельного протокола, например AbortSignal, который должна поддерживать операция; уже совершённый эффект он не откатывает. Для отчёта по всем трём используй allSettled. Для ограничения числа активных запросов нужен отдельный worker pool.
+Synchronous logs come first, then promise microtasks, then the timer callback in the demonstrated context. Put await inside try/catch or return a promise with an explicit rejection handler. For shared state, check whether an await separates the read and the write.
 
-## Что сказать на интервью
+#### A plausible wrong solution: race means cancellation
 
-> Promise.all preserves input order and rejects on the first rejection, but it does not cancel the remaining work or limit concurrency.
+```ts check
+async function demonstrateRace(): Promise<boolean> {
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let completed = false;
+  const work = gate.then(() => { completed = true; return 42; });
+  try {
+    await Promise.race([work, Promise.reject(new Error("Timeout"))]);
+  } catch {
+    // The caller stopped waiting; the underlying work still exists.
+  }
+  release();
+  await work;
+  return completed; // true
+}
+```
 
-Семантику агрегирования Promise можно сверить в [MDN Promise.all](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all).
+The rejected deadline settles the race, not work. Releasing the controlled gate proves the losing operation still completes; the example needs no timing guesses. A real timeout should pass AbortSignal to an operation that supports it, and clear the timer in finally. Cancellation is cooperative: a non-supporting dependency will not stop merely because a signal was set. Decide how to observe or drain unfinished work.
+
+## Explain concurrency
+
+Name the order guarantee, maximum active work and failure policy separately. “Concurrent but returned in input order” is a valid combination; it requires storing results by input index.
+
+## Official references
+
+- [MDN: all](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/all)

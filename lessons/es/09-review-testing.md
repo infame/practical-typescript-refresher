@@ -83,4 +83,3 @@ Comprueba nuevos inicios, espera o cancelación del trabajo activo, selección d
 ## Explicar la corrección
 
 Describe entrada desencadenante, cambio de comportamiento y prueba. “Ahora espera la finalización del repositorio” expresa una garantía observable; mencionar await por sí solo no.
-

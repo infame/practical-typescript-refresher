@@ -1,16 +1,14 @@
-# События, идемпотентность и база данных
+# Events, idempotency and database writes
 
-Цель: правильно применить повторные и неупорядоченные обновления. Это уже не абстрактный system design: несколько строк записи в базу способны испортить данные, если контракт не определён.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Повтор и устаревшее событие
+## Duplicates and stale updates
 
-Дубликат — повторная доставка одного события. Устаревшее событие — другое событие с более старой версией. Дедупликация только по eventId не защищает от старой версии. Сравнение версии защищает состояние, но не обязательно побочные эффекты вроде отправки email.
+Duplicate delivery asks whether an event was already handled. Stale update asks whether a newer entity version is already stored. Their keys differ. Versions from unrelated sources are not automatically comparable; use a composite state key unless the domain defines a cross-source ordering. Identity resolution between providers is another business problem.
 
-Допустим, источник задаёт монотонную version отдельно для каждого listing. Текущее состояние v5. Приходит v3: игнорируем. Повтор v5: игнорируем. Приходит v6: применяем. При одинаковой версии и разном payload нужен контракт конфликта; здесь считаем событие версии неизменяемым и равную версию пропускаем.
+## Why find-then-insert races
 
-Версии разных источников нельзя автоматически сравнивать друг с другом. Поэтому ключ нашего состояния — `(source_id, listing_id)`. Сопоставление одного товара между источниками — отдельная бизнес-задача.
-
-## 2. Почему find-then-insert даёт гонку
+Two callers can both observe a missing record before either inserts it. A JavaScript check does not replace a database uniqueness constraint. Enforce the composite key in storage and combine the condition with the write. A transaction alone is not a magic substitute for choosing the correct constraint, isolation and atomic statement.
 
 ```ts
 const existing = await db.find(id);
@@ -18,11 +16,9 @@ if (!existing) await db.insert(record);
 else await db.update(id, record);
 ```
 
-Два запроса могут одновременно не увидеть запись и оба попытаться вставить её. Даже при наличии unique constraint один получит конфликт. Если оба увидят старую версию, позднее завершившаяся запись может затереть более свежую.
+## Conditional upsert
 
-Одного слова «транзакция» недостаточно: при обычной изоляции две транзакции всё ещё могут прочитать одинаковое состояние. Нужны конкретные гарантии: уникальность ключа и атомарная условная запись, блокировка либо проверка версии с обработкой конфликта.
-
-## 3. Условный upsert в PostgreSQL
+An INSERT ON CONFLICT with a version condition can keep the highest version despite concurrent delivery. RETURNING distinguishes an applied update from a skipped one. The unique constraint must match the conflict target. Equal versions are skipped in this contract, so their payloads must be immutable or a conflict rule is required. This example demonstrates state selection; it does not magically deduplicate external side effects.
 
 ```sql
 CREATE TABLE listings (
@@ -43,29 +39,17 @@ WHERE EXCLUDED.version > listings.version
 RETURNING source_id, listing_id, version;
 ```
 
-EXCLUDED — кандидат на вставку. Условие обновления проверяется в рамках операции базы: старая версия не должна перезаписать новую. Если конфликтная запись не обновлена из-за WHERE, RETURNING не вернёт её; приложение может обозначить это как stale/unchanged. В этом примере цены хранятся в центах; не передавай долларовую цену без явного преобразования.
+## Idempotent side effects
 
-При batch upsert заранее учти несколько входных строк с одним ключом: один statement не должен пытаться обновить одну существующую строку несколько раз. Можно предварительно выбрать максимальную версию по ключу. Это допустимо для снимков состояния, но не всегда для событий, каждое из которых имеет отдельный эффект.
+Email, payment or another external effect cannot safely be repeated merely because a record update is conditional. Combine an inbox marker and database changes in the same transaction; an outbox can atomically record work to publish later. A downstream consumer still needs an idempotency key or deduplication policy. Explain the failure window between commit and delivery rather than promising exactly-once behavior without assumptions.
 
-Подробности ON CONFLICT — в [PostgreSQL INSERT](https://www.postgresql.org/docs/current/sql-insert.html).
+## Deletion and old events
 
-## 4. Идемпотентность побочных эффектов
+Physically removing version 5 can let late version 3 recreate the entity. A tombstone retains deletion state and version so old updates are rejected. Retention depends on replay and recovery windows. If a source can reset versions, the ordering contract must also include an epoch or another generation identifier.
 
-Если событие одновременно обновляет состояние и создаёт запись в таблице уведомлений, эти изменения можно объединить одной транзакцией. Для обработки eventId заведи таблицу с уникальным `(source_id, event_id)`.
+## Write SQL by hand
 
-Логика: начать транзакцию, попытаться вставить processed-event; если уже есть — вернуть duplicate; применить бизнес-изменение; зафиксировать транзакцию. При ошибке всё откатывается. Нельзя сначала навсегда отметить событие обработанным, а потом вне транзакции выполнять изменение: падение между шагами потеряет эффект.
-
-Отправка email или HTTP-запрос во внешний сервис не откатывается транзакцией Postgres. Для этого часто сохраняют outbox-запись в той же транзакции, а отдельный worker доставляет её. Повторная доставка всё ещё возможна, поэтому downstream должен дедуплицировать или поддерживать idempotency key.
-
-Идемпотентность означает, что повтор не создаёт дополнительного эффекта. Это не синоним «код выполнялся ровно один раз». Гарантии exactly-once всегда надо обсуждать в конкретных границах системы.
-
-## 5. Удаления и старые события
-
-Если удалить состояние v5 физически, позже пришедшая v3 может вставить позицию каталога заново: сравнивать уже не с чем. Tombstone — сохранённая отметка удаления с версией — позволяет отвергнуть старые обновления. Срок хранения tombstones связан с максимальным окном повторной доставки и восстановления.
-
-## 6. SQL, который стоит написать руками
-
-Последняя запись по позиции каталога с детерминированным разрешением равного времени:
+Use ROW_NUMBER partitioned by the entity key to select a latest row, with a deterministic tie-breaker. A left join must preserve missing right-side rows; count or aggregate according to null semantics. Identify useful indexes from predicates and joins, and inspect the actual query plan. SQL examples need an appropriate schema and database to execute.
 
 ```sql
 SELECT source_id, listing_id, price_cents, updated_at
@@ -80,22 +64,20 @@ FROM (
 WHERE rn = 1;
 ```
 
-Второй критерий здесь — выбранное правило tie-break, а не универсальная истина о времени. Если бизнес-версия надёжнее времени, сортируй по ней.
-
 ```sql
 SELECT source_id, COUNT(*) AS total, AVG(price_cents) AS avg_price
 FROM listings
 GROUP BY source_id;
 ```
 
-Для запроса `WHERE source_id = $1 ORDER BY updated_at DESC, listing_id DESC LIMIT 50` возможный индекс начинается с source_id и продолжает полями сортировки. Смотри реальный план через EXPLAIN: наличие индекса не гарантирует его использование. Cursor pagination по паре `(updated_at, listing_id)` обычно предсказуемее больших OFFSET; при изменяющихся данных отдельно нужны правила snapshot/consistency.
+## Practice
 
-## Практика
+Two events v5 and v3 for the same source/entity complete in reverse order. What protects the latest state? What changes if each event sends an email?
 
-В базе v7. Два workers применяют v8 и v9. Вызов v9 завершился раньше v8. Как сохранить v9? А если после удаления v10 придёт v8?
+### Spoiler
 
-### Спойлер
+An atomic conditional write protects version 5 regardless of completion order. The email adds an independent effect: use a delivery identity, durable inbox/outbox protocol and downstream replay-safe behavior. A Set in one process disappears on restart and cannot coordinate multiple workers.
 
-Сравнение версии должно быть частью атомарной записи в базе, а не проверкой в JS перед await. Условный upsert пропустит v8 после v9. После удаления нужно сохранить tombstone v10 или эквивалентный watermark, иначе старое событие может воскресить запись.
+## Official references
 
-> I'll make version comparison part of the atomic write. Deduplicating deliveries alone is not enough to protect against out-of-order events.
+- [Node.js: sql-insert](https://www.postgresql.org/docs/current/sql-insert.html)

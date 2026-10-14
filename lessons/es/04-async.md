@@ -104,7 +104,30 @@ Predice el orden de logs síncronos, Promise.then y setTimeout. Explica por qué
 
 ### Spoiler
 
+Para el código anterior el orden exacto es **A, F, C, E, D, B**. A y F son síncronos. El primer then encola C; queueMicrotask encola E. Solo cuando termina C se encola D, por eso E va antes. El timer se ejecuta después de vaciar las microtareas. Envolver cálculo pesado en una función async no lo mueve a otro hilo.
+
 Primero van los logs síncronos, después microtareas y luego el timer en el contexto mostrado. Espera dentro de try/catch o añade un handler de rechazo. Revisa si await separa la lectura y escritura de un estado compartido.
+
+#### Error plausible: race implica cancelación
+
+```ts check
+async function demonstrateRace(): Promise<boolean> {
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let completed = false;
+  const work = gate.then(() => { completed = true; return 42; });
+  try {
+    await Promise.race([work, Promise.reject(new Error("Timeout"))]);
+  } catch {
+    // The caller stopped waiting; the underlying work still exists.
+  }
+  release();
+  await work;
+  return completed; // true
+}
+```
+
+El deadline rechaza race, pero no work. Abrir el gate controlado prueba que la operación restante termina, sin depender de tiempos. Pasa AbortSignal a una operación compatible y limpia el temporizador en finally. La cancelación es cooperativa; una dependencia incompatible no se detiene por activar la señal. Define cómo observar o esperar el trabajo pendiente.
 
 ## Explicar concurrencia
 

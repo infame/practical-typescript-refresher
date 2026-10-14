@@ -127,4 +127,3 @@ Resultados: [0,1], longitud 2, índice 1 y [1,6]. Explica el invariante antes de
 ## Si te atascas
 
 Escribe una solución sencilla correcta, estima coste, encuentra trabajo repetido y elige la estructura que lo elimina. Traza un contraejemplo pequeño. Reconocer un patrón no basta: justifica que su invariante corresponde al contrato.
-

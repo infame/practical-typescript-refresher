@@ -1,20 +1,14 @@
-# Реализуем mapLimit
+# Implement a concurrency limiter
 
-Цель: написать рабочий ограничитель конкурентных операций без библиотеки и объяснить его поведение при ошибках. Полная реализация находится также в `examples/core.ts`; её проверяют автоматические тесты.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Сначала контракт
+## Define the contract first
 
-Функция принимает массив, положительный целый limit и async-callback. Возвращает результаты в порядке входа. Одновременно активны не более limit callback-вызовов. Пустой вход возвращает пустой результат. Некорректный limit отклоняется даже для пустого входа.
+mapLimit accepts an input array, a positive integer limit and an async callback. It returns an array in input order and never has more than limit active callbacks. This version stops scheduling after observing a failure, waits for already-active work, then rejects with the first observed error. Validate the limit even for an empty input. Use a separate failure boolean because undefined is a legal thrown value.
 
-Для ошибок выбираем точное правило: как только worker наблюдает первую ошибку, новые элементы больше не берём; уже начатые операции дожидаются завершения; затем отклоняем общий Promise первой наблюдённой ошибкой. Это не мгновенный fail-fast и не отмена. Зависшая операция задержит завершение — поэтому timeout операции является отдельной ответственностью.
+## Workers instead of batches
 
-Не меняем входной массив во время работы. Пример рассчитан на обычный плотный массив.
-
-## 2. Почему workers, а не пачки
-
-Пачки по три тоже ограничивают concurrency, но ждут самого медленного элемента каждой пачки. Если один запрос занимает секунду, а два других 10 мс, два места простаивают почти секунду. Workers берут следующий элемент сразу после освобождения места.
-
-Представь несколько кассиров и одну очередь. Каждый берёт следующего покупателя, обслуживает и возвращается к очереди. Число кассиров и есть лимит.
+Create at most min(limit, items.length) workers sharing a synchronous iterator. Each worker takes one index, awaits the callback and writes its result to that index. Once a worker finishes, it immediately takes another item; fixed batches would wait for the slowest item in each batch and waste available capacity. A results array can retain order while execution completes out of order.
 
 ```ts
 async function mapLimit<T, R>(
@@ -56,21 +50,13 @@ async function mapLimit<T, R>(
 }
 ```
 
-## 3. Почему два workers не возьмут один элемент
+## Why work is not duplicated
 
-Получение `iterator.next()` синхронно и происходит до await. В одном JS-потоке эти вызовы не исполняются одновременно. Worker A уже продвинул итератор, прежде чем управление сможет перейти к worker B. Отдельный mutex здесь не нужен.
+Obtaining the next iterator item happens synchronously before await. Another worker cannot interleave inside that operation in this single-threaded implementation. This is not a guarantee across worker_threads or multiple processes. When a worker observes failure it changes a shared flag; others finish their active item and check the flag before requesting more.
 
-Этот довод относится к общей очереди внутри одного JS-потока. Он не доказывает безопасность read-modify-write в базе, нескольких процессах или worker threads с shared memory.
+## Partial outcomes as data
 
-`results[index]` сохраняет порядок входа независимо от порядка завершения. Если использовать `results.push`, получится порядок завершения — другой контракт.
-
-Почему отдельный `failed`, а не проверка `firstError !== undefined`? В JavaScript разрешён `throw undefined`. Значение ошибки не годится как признак её наличия.
-
-Try охватывает и вызов fn, и его await, поэтому ловит и синхронное исключение callback, и rejection. Promise.all здесь объединяет только workers, каждый из которых перехватывает свою ошибку. Поэтому общий await действительно дожидается уже запущенных операций.
-
-## 4. Частичные результаты
-
-Если нужно обработать все записи и вернуть индивидуальные ошибки, перехвати ошибку внутри callback и верни Result. Для mapLimit callback тогда завершился успешно, даже если бизнес-операция не удалась.
+To keep processing after an individual failure, catch inside the callback and return a discriminated success/failure value. The limiter still handles unexpected failures of that wrapper according to its fail-fast contract. Do not silently substitute null when the caller needs the reason and the input position.
 
 ```ts
 type Outcome<T> =
@@ -86,24 +72,41 @@ const outcomes = await mapLimit(items, 4, async (item): Promise<Outcome<Saved>> 
 });
 ```
 
-Это не «проглотить ошибку»: ошибка представлена в результате и будет учтена вызывающим кодом. Решение о частичном успехе должно быть явным.
+## What a limit does not guarantee
 
-## 5. Что лимит не гарантирует
+A concurrency limit is not a requests-per-second rate limit, cancellation, a retry budget or a per-key ordering guarantee. Slow tasks can hang all workers unless operations have timeouts or cancellation. Huge input and result arrays still consume memory; an unbounded stream needs a streaming contract and backpressure.
 
-Четыре workers — не четыре запроса в секунду. Если запрос длится 10 мс, throughput может быть гораздо выше. Rate limit регулирует старт операций во времени; concurrency limit — число одновременно незавершённых операций.
+## Practice
 
-Если один callback запускает пять запросов через Promise.all, limit 4 допускает до двадцати запросов. Лимитировать нужно на правильном уровне. CPU-heavy callback всё ещё блокирует event loop. Массив входа и результатов занимает O(n) памяти: это не streaming-решение для бесконечного потока.
+Implement the limiter without reading the solution. Try variable delays, one early error, a synchronous throw, throw undefined and an empty array with an invalid limit.
 
-## Практика
+### Spoiler
 
-Limit равен 2. A длится 100 мс, B — 10 мс, C — 10 мс. В каком порядке они стартуют и заканчиваются? В каком порядке возвращаются результаты? Что изменится, если B отклонится?
+Reserve indices before awaiting, use a shared failure flag and store the first error independently. Drain active workers with Promise.all before rethrowing. This makes the timing of rejection predictable and avoids claiming that active work was cancelled.
 
-### Спойлер
+#### A plausible wrong solution: limit promises after starting them
 
-Сначала стартуют A и B. Через примерно 10 мс B освобождает worker, начинается C. Затем заканчивается C, потом A. Результат всё равно `[resultA, resultB, resultC]`. Если B отклонится, worker выставит failed, C не начнётся, уже запущенный A завершится, и затем mapLimit отклонится ошибкой B. Это описание предполагает указанные длительности и отсутствие других ошибок.
+```ts check
+async function demonstrateEagerStart(): Promise<number[]> {
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const started: number[] = [];
+  const load = async (id: number): Promise<number> => {
+    started.push(id);
+    await gate;
+    return id;
+  };
+  const promises = [1, 2, 3].map(load);
+  // All three are active now; awaiting promises one by one cannot undo that.
+  const beforeWaiting = [...started]; // [1, 2, 3]
+  release();
+  await Promise.all(promises);
+  return beforeWaiting;
+}
+```
 
-## Что проверить тестами
+Workers must receive items or functions that start work, not already-running promises. For a limit of two, the third load must not start until one of the first two settles. The gate shows that every call started and is blocked before any consumer waits. Likewise, fixed groups of two preserve a ceiling but leave capacity idle when one task finishes early; a free worker should take the next item immediately.
 
-Пустой вход, limit 1, limit больше длины, неправильный limit, максимум активных операций, порядок результата при разной длительности, ошибка и отсутствие новых стартов после её наблюдения. Дополнительно — `throw undefined` и синхронный throw.
+## Test observable behavior
 
-> I'll use a fixed number of workers sharing an iterator. Each worker stores its result at the original index. On failure I'll stop scheduling and wait for in-flight work before rejecting.
+Track active operations and maximum concurrency, use deferred promises to control completion, check input-order output and verify that no additional items start after observed failure. Avoid sleep-based tests that depend on wall-clock scheduling. Include limit one and a limit larger than the input.

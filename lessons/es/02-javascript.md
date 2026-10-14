@@ -92,6 +92,8 @@ const b = Date.parse("2026-10-01T09:00:00Z");      // 09:00 UTC
 a < b; // true
 ```
 
+Por ejemplo, `0.1 + 0.2 !== 0.3`. Si el contrato usa una moneda de dos decimales, unidades menores enteras dentro del rango seguro evitan esos errores fraccionarios; otras monedas necesitan su propia escala. Conserva IDs como "00123" como cadenas. Date.parse devuelve milisegundos o NaN, mientras una API puede enviar segundos; indica la unidad en el nombre del campo. Incluye zona horaria explícita, normaliza una vez y compara timestamps, no cadenas ISO con offsets distintos.
+
 ## Práctica
 
 Predice una ordenación numérica, el valor por defecto cuando la entrada es cero y una modificación de un array anidado tras spread.
@@ -116,4 +118,3 @@ El `source` original conserva los IDs A, B en ese orden. Su primer array `tags` 
 ## Separar las comprobaciones
 
 Antes de cada if, decide si compruebas presencia, tipo o validez de negocio. Son preguntas diferentes: un número puede existir y tener el tipo correcto, pero ser negativo o infinito.
-

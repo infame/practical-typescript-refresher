@@ -1,14 +1,10 @@
-# Коллекции и обработка данных
+# Collections and data processing
 
-В примерах listing — позиция каталога, а source — поставщик данных. Эти приёмы применимы и к профилям, событиям, задачам.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-Цель: за несколько минут превратить условие «для каждого X выбрать или накопить Y» в простой работающий код. Это глава про дедупликацию, группировку и соединение источников. Сложности ниже — обычные ожидаемые оценки для hash map, а не обещание спецификации JS о строгом O(1) каждой операции.
+## Keep the latest version
 
-## 1. Последняя версия каждой позиции каталога
-
-Есть массив событий в произвольном порядке. Верни для каждого `listingId` запись с максимальной `version`. Вход валиден, при одинаковой версии оставляем первую запись, порядок результата не важен.
-
-Перед кодом уточни, что означает «последняя»: последняя во входном массиве, максимальная версия или максимальный timestamp? Эти условия дают разные ответы. Также проверь область уникальности ID: если он уникален лишь внутри источника, ключ должен учитывать источник.
+Use a Map keyed by entity ID. Read the current winner, compare versions, and replace only for a strictly larger version. Last in the input is not necessarily newest. A strict comparison retains the first record on ties. One pass costs O(n) operations and O(k) retained records, plus the cost of processing string keys. Sorting adds work without helping this contract.
 
 ```ts
 type ListingUpdate = {
@@ -32,15 +28,9 @@ function latestByListing(
 }
 ```
 
-Мысленно: пришло A версии 3 — запомнили; B версии 1 — отдельная запись; A версии 2 — пропустили; A версии 5 — заменили третью пятой. После каждого шага Map хранит лучшую запись среди уже просмотренных. Это инвариант, который объясняет правильность всего алгоритма.
+## Group and join by key
 
-Время O(n), память O(k), где k — число уникальных позиций каталога. Сортировка не нужна: чтобы найти максимум, достаточно сравнивать кандидата с текущим лучшим. Обычный `set` без сравнения оставит последнюю встреченную запись, а не максимальную версию.
-
-`readonly` запрещает функции менять массив через параметр, но не замораживает данные во время исполнения. Возвращённые объекты — ссылки на исходные записи.
-
-## 2. Группировка и соединение по ключу
-
-Теперь нужно добавить к каждой позиции каталога всю историю цен. Позицию каталога без истории сохраняем с пустым массивом. Это аналог left join по смыслу, но правая сторона собирается во вложенный массив.
+Build the right-side index once, then map the left side. This is a left join with nested history: entities without history remain present with an empty array. Preserve the order of entities and the input order of history unless chronology is explicitly required. Repeated entity IDs may share a history array; clone it if independent mutable results are part of the contract. A Map.get returns the same stored array, so pushing into it does not require another set.
 
 ```ts
 type Listing = { id: string; title: string };
@@ -73,15 +63,9 @@ function attachHistory(
 }
 ```
 
-Сначала раскладываем документы по папкам, затем берём нужную папку для каждой позиции каталога. Вместо повторного `changes.filter(...)` для каждого listing получаем O(n + m) времени и O(m) памяти для индекса. `get` возвращает ссылку на существующий массив: после `push` повторный `set` не требуется.
+## Deduplicate deliveries
 
-Порядок позиций каталога сохраняется благодаря `listings.map`. История хранит порядок событий во входе. Если нужна хронология, сортируем каждую группу отдельно. Не надо сортировать без требования: это лишняя работа и изменение семантики.
-
-Изменения для неизвестных позиций каталога в результат не попадут. Если важно их диагностировать, собери их отдельно. Если IDs позиций каталога повторяются, несколько результатов будут ссылаться на одну группу истории — это тоже часть контракта, которую стоит заметить.
-
-## 3. Дедупликация
-
-«Одинаковая позиция каталога» и «повторная доставка одного события» — разные вещи. Для повторов нужен `eventId`, а не `listingId`: у одной позиции каталога может быть много законных изменений.
+Entity identity and event identity are different. A legitimate entity may have many changes. Deduplicate by event ID in its declared scope, such as (sourceId, eventId); select the latest state separately by (sourceId, entityId). A Set of objects compares references rather than fields. For first delivery use a Set of keys; for last value use a Map. Updating a Map value does not move its iteration position.
 
 ```ts
 function deduplicate(changes: readonly PriceChange[]): PriceChange[] {
@@ -97,30 +81,36 @@ function deduplicate(changes: readonly PriceChange[]): PriceChange[] {
 }
 ```
 
-Сохраняем первое появление каждого события; время O(n), память O(u). Чтобы сохранить последнее значение по ID, используй Map и перезаписывай. Но обновление ключа в Map не переносит его в конец порядка обхода: значение последнее, позиция от первого добавления.
+## Avoid accidental quadratic work
 
-Если `eventId` уникален только внутри источника, можно построить ключ из пары валидных строк: `JSON.stringify([sourceId, eventId])`. Простая склейка через `:` может дать коллизию, если разделитель встречается внутри компонентов. Новый массив `[sourceId, eventId]` как ключ не подходит для сравнения по содержимому: массивы сравниваются по ссылке.
+Calling filter or find for every input record repeatedly scans the same data. Build an index when the task repeatedly asks the same lookup question. Rebuilding an accumulator with object spread inside every reduce can also turn a linear algorithm into quadratic copying. Prefer a clear loop; define key uniqueness and absent values before choosing Map or an object. JSON.stringify of a pair or nested Maps avoids delimiter collisions, but processing long IDs still has a cost.
 
-Одинаковый ID с разным payload — конфликт, а не обязательно безобидный повтор. Определи правило: отклонять, сохранять первый или выбирать версию. Set внутри функции защищает только один вызов. Между запросами и процессами нужна сохранённая и атомарная защита, к ней вернёмся в главе 7.
+## Practice
 
-## 4. Ловушки производительности
+For A/v3, B/v1, A/v2, A/v5, B/v1 retain the first record on equal versions. What remains? Then implement a per-entity event counter rather than a latest-version index.
 
-`map` с `find` или `filter` внутри скрывает вложенный обход. Аналогично, при каждом добавлении делать `[...group, item]` означает копировать всю накопленную группу. Для одной большой группы суммарная работа становится квадратичной. Локальный `push` в массив, созданный внутри функции, здесь уместен.
+### Spoiler
 
-Оценки O(n) предполагают ограниченный размер ключей. Построение и обработка составного строкового ключа также стоят время, пропорциональное длине его компонентов; для длинных IDs учитывай общий объём строк.
+A/v5 and the first B/v1 remain. For a counter, update counts.set(id, (counts.get(id) ?? 0) + 1). Version selection, delivery deduplication and counting have different keys and policies; explain those before writing code.
 
-Map нужен для динамического индекса, Set — для проверки наличия, массив — для последовательности. Обычный объект удобен для записи с известными полями. Не выбирай структуру только потому, что её синтаксис короче.
+#### A plausible wrong solution: deduplicate by entity
 
-## Практика
+```ts check
+const events = [
+  { eventId: "E1", entityId: "A", version: 1 },
+  { eventId: "E2", entityId: "A", version: 2 },
+];
+const seen = new Set<string>();
+const wrong = events.filter(event => {
+  if (seen.has(event.entityId)) return false;
+  seen.add(event.entityId);
+  return true;
+});
+// wrong contains only E1/version 1.
+```
 
-Вход: A/v3, B/v1, A/v2, A/v5, B/v1. Для одинаковой версии сохраняем первую. Что останется? Какая структура нужна, если вместо последней версии требуется количество событий каждой позиции каталога?
+E2 is a new update, not a replay. The required latest version is 2, but using entity identity to deduplicate throws it away before version selection. Use event identity for delivery and entity identity for state. If E1 also exists in a second source, include sourceId in both keys. On equal versions the stated policy retains the first record, so replacing on >= is a separate bug.
 
-### Спойлер
+## Explain the decision
 
-Останутся A/v5 и первая B/v1. Для количества — `Map<string, number>`: `counts.set(id, (counts.get(id) ?? 0) + 1)`. Не сохраняй массив всех событий только ради его длины: достаточно счётчика.
-
-## Что сказать на интервью
-
-> I'll index the records by listing ID. For each key, I'll keep the highest version seen so far. This avoids repeatedly scanning the input.
-
-Проверь пустой вход, один элемент, разные IDs, неупорядоченные версии, равные версии и составные ключи. Объясни правила до оптимизации.
+Explain the key, conflict rule, complexity and order guarantee. “I will index by entity ID and keep the highest version seen” is more useful than merely naming a data structure. Try one new input with repeated IDs and delimiter characters before moving on.

@@ -59,6 +59,17 @@ const md = new MarkdownIt({
     return hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : escape(code);
   },
 });
+const renderLink = md.renderer.rules.link_open;
+md.renderer.rules.link_open = (tokens, index, options, env, self) => {
+  const token = tokens[index];
+  const href = token.attrGet('href');
+  if (/^\.\/\d{2}-[a-z-]+\.md(?:#.*)?$/.test(href || '')) {
+    token.attrSet('href', href.replace(/^\.\//, '').replace(/\.md(?=#|$)/, '.html'));
+  }
+  return renderLink
+    ? renderLink(tokens, index, options, env, self)
+    : self.renderToken(tokens, index, options);
+};
 const htmlToken = (tokens, html) => {
   const t = new tokens[0].constructor('html_block', '', 0);
   t.content = html;

@@ -53,3 +53,15 @@ test('same source contract gets consistent domain identifiers and metric names',
     assert.ok(!s.includes('Listing'));
   }
 });
+
+test('source chapter links become same-edition HTML links without changing official references', () => {
+  const rendered = renderContent(
+    '## Review\n\n[Chapter](./03-typescript.md) and [Official](https://www.typescriptlang.org/docs/handbook/intro.html)',
+    'Spoiler',
+  );
+  assert.match(rendered.html, /href="03-typescript.html"/);
+  assert.match(
+    rendered.html,
+    /href="https:\/\/www.typescriptlang.org\/docs\/handbook\/intro.html"/,
+  );
+});

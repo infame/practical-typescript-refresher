@@ -108,6 +108,24 @@ const safe = () => counter.increment();
 safe();
 ```
 
+Pasar counter.increment a un planificador separa el método de su objeto. El receptor depende de la llamada posterior, no de dónde se obtuvo el método. bind fija el receptor; un wrapper llama al método sobre el objeto. La closure lee la variable al invocarse: cambiar count antes modifica el resultado. Prueba una llamada directa y un callback separado; solo counter.increment() no revela el fallo.
+
+```ts check
+class Counter {
+  value = 0;
+  increment() { this.value++; }
+}
+const counter = new Counter();
+const detached = counter.increment;
+// detached() would throw in this strict module: this is undefined.
+const bound = counter.increment.bind(counter);
+bound(); // value is 1.
+let count = 0;
+const readCount = () => count;
+count = 2;
+readCount(); // 2: the closure reads the current variable, not its old value.
+```
+
 ## Práctica
 
 ¿Por qué un status inferido falla ante una unión literal? ¿Por qué Readonly<{tags: string[]}> permite push? ¿Qué diferencia hay entre optional y obligatorio con undefined?

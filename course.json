@@ -1,15 +1,15 @@
 {
-  "title": "Практический TypeScript",
-  "description": "Восстановить TS и уверенно решать практические задачи",
+  "title": "Practical TypeScript",
+  "description": "Refresh TypeScript and solve practical coding tasks",
   "tracks": {
     "refresher": {
-      "title": "Подзабыл TypeScript",
-      "description": "Язык → типы → запуск → данные → async → практика",
+      "title": "Return to TypeScript",
+      "description": "Language → types → tooling → data → async → practice",
       "chapters": [11, 2, 3, 12, 13, 1, 4, 5, 6, 7, 8, 9, 14, 10]
     },
     "interview": {
-      "title": "Перед практическим собесом",
-      "description": "Коллекции → JS и TS → async → импорт → review → mock",
+      "title": "Backend coding interview practice",
+      "description": "Collections → JavaScript and TypeScript → async → ingestion → review → mock",
       "chapters": [1, 2, 3, 4, 5, 6, 7, 8, 9, 14, 10]
     }
   }

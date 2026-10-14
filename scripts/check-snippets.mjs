@@ -12,7 +12,7 @@ const generated = [];
 for (const lang of ['en', 'ru', 'es']) {
   for (const file of files) {
     const source = await fs.readFile(
-      path.join(root, 'lessons', ...(lang === 'ru' ? [] : [lang]), file),
+      path.join(root, 'lessons', ...(lang === 'en' ? [] : [lang]), file),
       'utf8',
     );
     for (const domain of domains) {

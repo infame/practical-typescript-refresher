@@ -7,9 +7,11 @@ Focus on experienced developers returning to TypeScript and practical backend co
 3. Put exercise answers under `### Spoiler` (English/Spanish) or `### Спойлер` (Russian). The reader renders closed disclosures; do not put chapter navigation inside answers.
 4. Use a `ts check` fence for an independent compilable snippet. Include dependencies; intentional errors need explained `@ts-expect-error`. Verification compiles all three languages across all four domain substitutions.
 5. Put reusable implementations in `examples/` with behavior tests. Do not claim real network or database guarantees from a mock.
-6. Update `lessons/en/`, `lessons/es/` and Russian `lessons/` together. Preserve chapter IDs, section order and URLs. Update `course.json` for route changes.
+6. Update canonical English `lessons/`, Russian `lessons/ru/` and Spanish `lessons/es/` together. Preserve chapter IDs, section order and URLs. Update `course.json` for route changes.
 7. Practice contracts live in `content/practice.<language>.md`; keep rules equivalent. Domain substitutions in `scripts/course-content.mjs` must preserve algorithm behavior. Numeric fields in the shared exercise intentionally use a simplified contract, not every business rule of a real domain.
 8. Localize visible strings in `content/ui.json` and diagnostic content in `content/questions.<language>.json`.
 9. Run `npm run verify`, then check navigation, search, diagnostics, language/domain switching and a narrow viewport in a browser.
 
 Report issues with language, domain, chapter/section and a minimal example. Describe changes to evaluation inputs; exposed tasks are not unseen learning benchmarks. Do not equate a quiz score, chapter completion, example tests or an LLM experiment with demonstrated human learning.
+
+English is the canonical language of root metadata and shared documentation. Store localized files under explicit locale paths. Run `npm run check:content` for edition parity and canonical-source checks. Recorded evaluation data/hashes are historical evidence; content edits must not replace them with current-input hashes.

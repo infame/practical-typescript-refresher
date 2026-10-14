@@ -1,8 +1,10 @@
-# Code review, debugging и тесты
+# Code review, debugging and tests
 
-Цель: быстро найти ошибки поведения, показать их на примере и предложить минимальное исправление. На интервью review — это не поиск всех возможных улучшений стиля. Начинай с неправильного результата, потери данных и неуправляемого выполнения.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Разбери сломанный importer
+## Review a broken importer
+
+Look for an async forEach whose promises are not awaited, wrong deduplication scope, a truthiness check dropping zero, an assertion pretending to validate JSON, and a find-then-write race. Check both the returned report and when the function actually completes. Review the contract before optimizing or rewriting unfamiliar code.
 
 ```ts
 async function importListings(records: any[]) {
@@ -24,35 +26,23 @@ async function importListings(records: any[]) {
 }
 ```
 
-Потрать несколько минут: когда функция завершается, что считается успехом, что будет при повторе и при неупорядоченных версиях? Только потом переходи к ответу.
+### Spoiler
 
-### Спойлер
+Compare the implementation with the stated contract. Explain which check establishes each guarantee before trying a new variation.
 
-forEach не ожидает async callbacks. Результат возвращается раньше записей, массив errors ещё может изменяться после возврата. imported равен длине входа, даже если записи пропущены или упали. `!record.price` отбрасывает ноль, но пропускает строку `"bad"`. Внешние поля не проверяются, any скрывает ошибки.
+## Explain a bug with evidence
 
-find-then-insert имеет гонку, а без сравнения версии старый record может затереть новый. Запросы запускаются без лимита. У ошибок нет индекса/ID записи; error.message не гарантирован, ведь throw может содержать любое значение. Передача record целиком в базу может записать непредусмотренные поля.
+Give a concrete input, the expected result and the actual behavior. Then point to the invariant violated by the code. For async bugs, show the sequence of operations, not just a final value. A minimal reproducer is more useful than a general opinion about coding style.
 
-Приоритет исправлений: дождаться работы и правильно посчитать результаты; валидировать данные; обеспечить атомарную версионную запись; ограничить concurrency; вернуть диагностируемые исходы. Имена и форматирование — после этого.
+## Test behavior through dependencies
 
-## 2. Как объяснять баг убедительно
-
-Вместо «тут возможны race conditions» назови последовательность: два workers читают отсутствие строки, затем оба вставляют. Вместо «Promise.all плохой» скажи, какой размер входа и какой лимит downstream делают неограниченный запуск проблемой. Для 5 независимых запросов Promise.all может быть идеальным решением.
-
-Отделяй доказанный баг от вопроса к контракту. «Функция возвращает imported до завершения insert» — баг. «Нужно ли сохранить порядок?» — вопрос. «Можно переименовать переменную» — рекомендация. Это помогает не утонуть в мелочах.
-
-## 3. Тестируем поведение через зависимости
-
-Выдели интерфейс хранилища, а не привязывай всю бизнес-логику к конкретному ORM:
+Inject a repository or transport and make the fake record calls, defer completion or return a chosen error. Assert observable behavior: input validation, key scope, actual completion and failure policy. Mock only the boundary you need; do not copy the implementation into the test. Deterministic deferred promises reveal concurrency without relying on timers.
 
 ```ts
 interface Repository {
   upsertIfNewer(update: ListingUpdate): Promise<"applied" | "stale">;
 }
 ```
-
-В тесте передай fake с заданным поведением. Это позволяет проверить частичную ошибку без настоящей сети. Но fake не доказывает атомарность SQL: конкурентную запись базы проверяют отдельно интеграционным тестом с реальной БД.
-
-Тесты должны отличать правильное решение от правдоподобного неправильного. Для mapLimit важно не только равенство массива результатов, но и максимум активных callbacks. Для versioned importer — старое событие после нового, одинаковая версия, разные sourceId с одним listingId.
 
 ```ts
 import assert from "node:assert/strict";
@@ -74,36 +64,22 @@ test("respects concurrency", async () => {
 });
 ```
 
-Этот короткий тест понятен, но для точных сценариев гонок лучше управляемые Promise-барьеры: сам разрешаешь конкретную операцию, а не надеешься на миллисекунды. Не проверяй точное реальное время «заняло 20 мс»: нагрузка машины делает такой тест хрупким.
+## Choose edge cases
 
-## 4. Что проверять
+Cover empty input, zero, null, missing fields, repeated delivery, equal and reversed versions, invalid limits, synchronous throw, throw undefined and reversed completion order. Test no mutation when that is promised. Concurrency, input-order output and per-key ordering are separate assertions.
 
-| Область | Случай | Какую ошибку ловим |
-|---|---|---|
-| Вход | null, массив, пустой ID, NaN | Неверная валидация |
-| Коллекции | пусто, дубли, равные версии | Неправильные границы и tie-break |
-| Async | rejection, sync throw, throw undefined | Потерянные ошибки |
-| Concurrency | разный порядок завершения | push вместо записи по индексу |
-| Состояние | v9, затем v8 | Регресс версии |
-| Частичный успех | одна запись падает | Ложный общий success |
-| Мутация | снимок входа до/после | Изменение чужих объектов |
+## A minimal debugging loop
 
-Не нужно мокать каждую внутреннюю функцию. Чем теснее тест привязан к последовательности приватных вызовов, тем больше он мешает нормальному рефакторингу. Проверяй внешний результат и важные гарантии.
+Reproduce the smallest failure, classify it as contract, data, type, runtime or scheduling, and change one cause. Keep a regression test for meaningful behavior. Run the relevant typecheck and test after the fix. Logging should identify the operation and input key without dumping secrets or huge payloads.
 
-## 5. Минимальный debugging-процесс
+## Practice
 
-Сначала воспроизведение на маленьком примере. Затем ожидание и фактический результат. Найди первый момент расхождения, а не последнее исключение. Проверь данные непосредственно перед проблемной операцией: тип, единицы времени, ID, версию, статус HTTP.
+The first limiter callback rejects while others are active. Which contract decisions should the test assert?
 
-После исправления добавь regression test на причину. Не делай сразу три рефакторинга: иначе трудно понять, что именно исправило баг. Для performance сначала оцени число операций и объём данных; часто вложенный find важнее микроптимизации синтаксиса.
+### Spoiler
 
-## Практика
+Check whether new work stops, whether active operations are drained or cancelled, which error is returned and when rejection becomes visible. Tests should follow the chosen policy instead of assuming every limiter uses the same semantics.
 
-Тест importer сравнивает только `results.length === input.length`. Достаточно? Какой один тест ты добавишь первым?
+## Explain the fix
 
-### Спойлер
-
-Недостаточно: функция может вернуть по success на каждый вход, не сделав ни одной записи. Первым проверь наблюдаемый эффект: после v5 и v3 в хранилище остаётся v5, а результаты содержат applied и stale. Для проблемы раннего возврата используй заблокированную запись и докажи, что importer ещё не завершился до её разрешения.
-
-## Что сказать на интервью
-
-> I'll first check correctness and failure handling, then concurrency and data integrity. I'll demonstrate each issue with a concrete input before changing the implementation.
+Describe the triggering input, changed behavior and evidence. “The importer now waits for repository completion” states a user-visible guarantee; naming await alone does not.

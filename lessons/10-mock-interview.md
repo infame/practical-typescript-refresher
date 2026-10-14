@@ -1,33 +1,18 @@
-# Пробное практическое интервью
+# Mock backend coding interview
 
-Финальная задача на 45–60 минут. Это авторская тренировка обработки данных для backend. Сначала попробуй сформулировать решение устно, затем обязательно напиши руками без просмотра ответа. Полный рабочий вариант есть в `examples/core.ts`, тесты — в `examples/core.test.ts`.
+A practical refresher. Read the contract, trace the examples, and attempt the exercise before opening its answer. Code blocks may share context; only `ts check` blocks are standalone checks.
 
-## 1. Условие
+## The task
 
-Напиши `importUpdates(raw, repository, concurrency)`. На вход приходит массив неизвестных значений. Валидная запись содержит непустые строки sourceId, eventId, listingId; неотрицательную безопасную целую version; конечную неотрицательную price.
+Implement importUpdates(raw, repository, concurrency). Input values are unknown. Valid records contain nonempty sourceId, eventId and entity ID, a nonnegative safe integer version and a finite nonnegative metric. Keep the maximum version per source/entity and skip equal versions. Report invalid, applied, stale and failed outcomes according to the demonstrated contract. Events at equal versions are immutable and there are no additional external effects.
 
-Идентификатор listing уникален внутри source. Версия монотонна внутри пары `(sourceId, listingId)`. События одной версии считаются неизменяемыми; равная версия пропускается. Требуется сохранить максимальную версию состояния. Дополнительных внешних побочных эффектов нет.
+## Plan the hour
 
-Хранилище предоставляет **атомарный** `upsertIfNewer`, возвращающий applied или stale. Реализовывать настоящую БД в первой части не нужно. Эта гарантия интерфейса существенна: простое find-then-update её не заменяет.
+Spend the first minutes clarifying validation, key scope, ordering and failure policy. Write types and one vertical path, then add the limiter and reporting. Use the last part for edge cases and explanation. A simpler correct implementation with explicit assumptions is better than an incomplete abstraction. Time spent on setup should happen before the interview.
 
-Импорт должен:
+## Starter contracts
 
-1. Вернуть ровно один результат на каждый входной элемент и сохранить порядок.
-2. Для плохого входа вернуть invalid с индексом и причиной.
-3. Для удачной записи вернуть applied либо stale с индексом и eventId.
-4. Для ошибки хранилища вернуть failed и продолжить другие записи.
-5. Ограничить активные операции заданным concurrency.
-6. Не менять входные объекты.
-
-Некорректный concurrency — ошибка всего вызова. Ошибка отдельной записи — часть отчёта. События не надо заранее удалять по eventId: для этой задачи идемпотентность состояния обеспечена версией, а отчёт нужен для каждого входа.
-
-## 2. План на час
-
-Первые 5 минут: уточни равные версии, ключ, частичный успех и порядок результата. Следующие 10: типы и parser. Затем 15: mapLimit и импорт. Ещё 15: тесты, включая out-of-order и частичный сбой. Оставшееся время: проговори ограничения и follow-ups.
-
-Если времени меньше, начни с последовательного корректного решения и затем добавь ограничитель. Скажи об этом интервьюеру; не трать половину раунда на универсальный framework.
-
-## 3. Стартовые типы
+The repository must offer an atomic upsertIfNewer rather than forcing the importer to read and then write. The parser handles external unknown input. Keep the concurrency helper generic and let the caller decide whether per-record errors become values. File implementations in examples/core.ts are the executable reference; domain-adjusted examples preserve the same algorithm.
 
 ```ts
 type ListingUpdate = {
@@ -48,15 +33,13 @@ type ImportResult =
   | { status: "failed"; index: number; eventId: string; message: string };
 ```
 
-Можно отделить applied и stale в два варианта, если позже у них появятся разные поля. Сейчас поля одинаковы, поэтому общее представление достаточно.
+## Practice
 
-## Практика
+Write the importer before opening the answer. Add tests for malformed input, a valid zero metric, v5 before v3, equal versions, failure of one repository write and completion of all active work.
 
-Реализуй parser, mapLimit и importUpdates. Данные: A/v5, A/v3, невалидная цена-строка, B/v1 с ошибкой хранилища, повтор A/v5. Что должно получиться? Учти: порядок применения при concurrency может отличаться от порядка входа.
+### Spoiler
 
-### Спойлер
-
-Если хранилище применяет A/v5 раньше A/v3, результаты для этих записей будут applied и stale. Если v3 успеет примениться первой, обе могут вернуть applied; финальное состояние всё равно v5. **Контракт гарантирует максимальную конечную версию, а не одинаковую классификацию промежуточных записей при любом расписании.** Невалидная запись даёт invalid, сбой B — failed, равная версия не меняет состояние.
+Validate each record at the boundary, keep identities in their correct scope, process with bounded concurrency and wait for every repository call covered by the return contract. The reference uses an atomic repository operation and records expected failures in the report.
 
 ```ts
 async function importUpdates(
@@ -88,32 +71,26 @@ function messageOf(error: unknown): string {
 }
 ```
 
-Parser строит новый объект с проверенными полями, а не возвращает payload через `as`. mapLimit из главы 5 сохраняет порядок. Локальные catch превращают ошибки записей в результаты, поэтому одна ошибка не останавливает весь импорт.
+## Follow-up: repeated delivery with effects
 
-## 4. Follow-up: повторная доставка с эффектом
+If processing sends a message or changes another resource, state selection alone is insufficient. Add an inbox/outbox protocol and downstream idempotency; specify recovery after each possible crash boundary. Do not present in-memory deduplication as durable coordination.
 
-Если теперь при applied требуется отправить уведомление, одной версии недостаточно для надёжной доставки. Падение после записи, но до email приведёт к тому, что повтор станет stale и уведомление потеряется. Нужен надёжный учёт эффекта, например outbox в одной транзакции с обновлением, плюс дедупликация доставки.
+## Follow-up: an unbounded stream
 
-## 5. Follow-up: бесконечный поток
+Replace whole-input and whole-output arrays with async iteration, bounded work and an incremental report or sink. Define backpressure and a durable checkpoint. Do not retain every event ID forever without a retention or storage policy.
 
-Текущий API хранит вход и выход целиком: O(n) памяти. Для большого потока нужен AsyncIterable, ограниченное число активных операций и постепенная выдача/запись отчёта. Если сохраняешь строгий порядок результатов, медленный первый элемент может задержать выдачу следующих; ограничивай не только active tasks, но и буфер завершённых результатов.
+## Follow-up: ordering per key
 
-## 6. Follow-up: порядок на один ключ
+A global concurrency cap does not serialize one entity. Atomic maximum-version writes are safe for this state-selection contract. Stateful transitions, increments and intermediate effects may need partitioned queues, a per-key lock or a different transaction protocol.
 
-Общий limiter не обеспечивает последовательность обновлений одного listing. Для условной записи максимальной версии это допустимо. Для операций вроде «увеличить баланс», последовательных переходов состояния или промежуточных эффектов понадобится иной контракт: очередь/partition по ключу либо блокировка и атомарная бизнес-операция.
+## Follow-up: retries
 
-## 7. Follow-up: retry
+Retry selected transient failures with bounded attempts and a total budget. Decide which operation is replay-safe; a timeout does not prove that the write did not happen. Keep retry, deduplication and version selection as separate concepts.
 
-Повторяй временные ошибки записи только если операция безопасна для повтора. Таймаут может означать «записали, но ответ потерялся». При versioned upsert повтор вернёт stale — состояние корректно, но отчёт должен учитывать неопределённый исход первой попытки, если различие applied/stale важно бизнесу.
+## Assess the attempt
 
-## 8. Как оценивать свою попытку
+Count solved requirements and meaningful tests, but also identify unsafe assertions, unexplained assumptions and places where help was needed. Do not confuse reading the solution with independent implementation. Repeat with changed inputs and a different failure policy.
 
-Два балла за каждый критерий: корректный контракт; валидация; concurrency и порядок; ошибки и финальное состояние; понятное объяснение и тесты. Это учебная шкала из 10, не прогноз решения работодателя. Если результат низкий, возвращайся к конкретной главе, а не перечитывай всё подряд.
+## Before an interview
 
-Для проверки запусти `npm test` и `npm run check`. In-memory fake из примера не доказывает поведение реальной БД и не имитирует распределённую транзакцию. На настоящем проекте отдельно нужны интеграционные проверки атомарного upsert и миграций.
-
-## Перед интервью
-
-Уточни у рекрутера язык, доступность TS, среду, продолжительность и правила использования документации/AI. Подготовь привычную сигнатуру функции и быстрый запуск тестов. На раунде проговаривай: требования → простой алгоритм → код → примеры → сложность → ограничения. Когда не знаешь деталь API, объясни намерение и проверь документацию, если это разрешено.
-
-Цель практики — работающий, понятный код с явными гарантиями. Сложность решения должна соответствовать условиям задачи.
+Run the project, check the compiler settings and rehearse one problem under a timer. This is a backend/data-processing exercise, not a guarantee for any company or every interview format. A frontend, framework, system-design or advanced algorithm round needs separate preparation.
