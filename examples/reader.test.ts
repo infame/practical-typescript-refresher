@@ -56,10 +56,14 @@ test('same source contract gets consistent domain identifiers and metric names',
 
 test('source chapter links become same-edition HTML links without changing official references', () => {
   const rendered = renderContent(
-    '## Review\n\n[Chapter](./03-typescript.md) and [Official](https://www.typescriptlang.org/docs/handbook/intro.html)',
+    '## Review\n\n[Chapter](./03-typescript.md) and [Official](https://www.typescriptlang.org/docs/handbook/intro.html) and `handlers[event.kind](event)`',
     'Spoiler',
   );
   assert.match(rendered.html, /href="03-typescript.html"/);
+  assert.equal(
+    rendered.sections[0].text.trim(),
+    'Review Chapter and Official and handlers[event.kind](event)',
+  );
   assert.match(
     rendered.html,
     /href="https:\/\/www.typescriptlang.org\/docs\/handbook\/intro.html"/,

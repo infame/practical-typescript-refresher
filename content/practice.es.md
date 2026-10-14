@@ -2,7 +2,7 @@
 
 ## 1. Validar una actualización
 
-Implementa parseEntity(unknown). Exige sourceId, eventId y entityId propios, strings no vacíos tras trim; version entero seguro no negativo y metric número finito no negativo. Rechaza null, arrays, números como strings y campos ausentes. Devuelve objeto nuevo e ignora campos extra. La métrica es un contrato simplificado, no una regla universal de ese negocio.
+Implementa `parseEntity(value: unknown): EntityUpdate`. Lanza un `Error` si la entrada no es válida; no devuelvas null ni undefined en ese caso. Exige sourceId, eventId y entityId propios, strings no vacíos tras trim; version entero seguro no negativo y metric número finito no negativo. Rechaza null, arrays, números como strings y campos ausentes. Devuelve objeto nuevo e ignora campos extra. La métrica es un contrato simplificado, no una regla universal de ese negocio.
 
 ### Spoiler
 

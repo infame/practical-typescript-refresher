@@ -114,7 +114,15 @@ export function renderContent(source, spoilerLabel) {
         sections.push(current);
       }
     }
-    if (current && (t.type === 'inline' || t.type === 'fence')) current.text += ' ' + t.content;
+    if (current && t.type === 'inline') {
+      const visible =
+        t.children
+          ?.map((child) => (['softbreak', 'hardbreak'].includes(child.type) ? ' ' : child.content))
+          .join('') ?? t.content;
+      current.text += ' ' + visible;
+    } else if (current && t.type === 'fence') {
+      current.text += ' ' + t.content;
+    }
     tokens.push(t);
   }
   closeAnswer();

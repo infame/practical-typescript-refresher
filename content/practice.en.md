@@ -2,7 +2,7 @@
 
 ## 1. Parse one update
 
-Implement parseEntity(unknown). Require own nonempty sourceId, eventId and entityId strings, normalize them with trim, require a nonnegative safe integer version and finite nonnegative numeric metric. Reject null, arrays, numeric strings and missing fields. Return a new object; unrelated fields are ignored. The numeric field represents the selected domain metric, not a claim that every real business metric follows this simplified contract.
+Implement `parseEntity(value: unknown): EntityUpdate`. Throw an `Error` on invalid input; invalid input does not return null or undefined. Require own nonempty sourceId, eventId and entityId strings, normalize them with trim, require a nonnegative safe integer version and finite nonnegative numeric metric. Reject null, arrays, numeric strings and missing fields. Return a new object; unrelated fields are ignored. The numeric field represents the selected domain metric, not a claim that every real business metric follows this simplified contract.
 
 ### Spoiler
 

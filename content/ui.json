@@ -88,7 +88,7 @@
       ]
     ],
     "storageNote": "Progress cannot be saved in this browser.",
-    "diagnosticIntro": "12 questions, about 5–10 minutes. Choose “I don’t know” when unsure. Your answers stay in this browser tab; correct guesses do not demonstrate independent coding."
+    "diagnosticIntro": "12 questions, about 5–10 minutes. Choose “I don’t know” when unsure. Answers are not uploaded. This diagnostic is not saved between pages or languages; open review links in another tab to keep your plan. A correct choice does not demonstrate independent coding."
   },
   "ru": {
     "brand": "Практический TypeScript",
@@ -179,7 +179,7 @@
       ]
     ],
     "storageNote": "Браузер не сохраняет прогресс.",
-    "diagnosticIntro": "12 вопросов на 5–10 минут. При неуверенности выбирайте «Не знаю». Ответы остаются в этой вкладке; правильный выбор не доказывает умение написать код."
+    "diagnosticIntro": "12 вопросов на 5–10 минут. При неуверенности выбирайте «Не знаю». Ответы никуда не отправляются. Диагностика не сохраняется при переходах между страницами или языками; открывайте главы в новой вкладке, чтобы сохранить план. Правильный выбор не доказывает умение написать код."
   },
   "es": {
     "brand": "TypeScript práctico",
@@ -270,6 +270,6 @@
       ]
     ],
     "storageNote": "El navegador no guarda progreso.",
-    "diagnosticIntro": "12 preguntas, unos 5–10 minutos. Elige «No lo sé» si dudas. Las respuestas quedan en esta pestaña; acertar no demuestra programación independiente."
+    "diagnosticIntro": "12 preguntas, unos 5–10 minutos. Elige «No lo sé» si dudas. Las respuestas no se envían. El diagnóstico no se guarda entre páginas o idiomas; abre los enlaces de repaso en otra pestaña para conservar el plan. Acertar no demuestra programación independiente."
   }
 }
