@@ -2,12 +2,12 @@
 
 The browser offers three exercises with the **same contracts and solutions** in every domain. The global selector changes entity names, IDs and numeric fields in lesson examples and practice. It does not introduce unrelated tasks or change the algorithm.
 
-| Domain | Entity | ID | Numeric field |
-| --- | --- | --- | --- |
-| Product catalog | Product | productId | price |
-| Analytics events | Page | pageId | views |
-| Background jobs | Job | jobId | attempts |
-| Profile sync | Profile | profileId | reputation |
+| Domain           | Entity  | ID        | Numeric field |
+| ---------------- | ------- | --------- | ------------- |
+| Product catalog  | Product | productId | price         |
+| Analytics events | Page    | pageId    | views         |
+| Background jobs  | Job     | jobId     | attempts      |
+| Profile sync     | Profile | profileId | reputation    |
 
 The vocabulary panel explains the selected scenario as well as listing its fields. Catalog examples use supplier snapshots; analytics uses snapshots of page view counts; jobs uses reported job state; profiles uses synchronized profile state. Importing a job update does not execute or retry a job, and a view-count snapshot is not an increment to apply on every delivery.
 
@@ -27,6 +27,4 @@ Each exercise owns its behavior contract. Shared practice removes duplicate deli
 
 [English source](../content/practice.en.md) · [Русский](../content/practice.ru.md) · [Español](../content/practice.es.md)
 
-The neutral implementation is `examples/training-core.ts`, tested by `examples/training-core.test.ts`. The practice page shows prerequisites before the tasks, and answers under closed spoilers. No extra chapter outline appears below answers.
-
-English `training.json` (with the earlier Russian copy in `content/training.ru.json`) and `examples/domains.ts` preserve the earlier, supplementary domain-specific tasks. They are separate exercises and are not the reader's shared practice flow.
+The neutral implementation is `examples/training-core.ts`, tested by `examples/training-core.test.ts`. Practice is a numbered step between the workshop and mock interview in both routes, with completion tracking and previous/next links. Each answer stays under a closed spoiler; the final section lists expected outcomes for manual checks. The reader copies displayed code rather than linking to a standalone TypeScript download.

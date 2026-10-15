@@ -72,10 +72,7 @@ for (const file of [
   'docs/evaluation-results.json',
   'content/questions.en.json',
   'content/practice.en.md',
-  'docs/AUDIT.md',
   'docs/EVALUATION.md',
-  'docs/LAUNCH.md',
-  'docs/PLAN.md',
   ...files.map((file) => `lessons/${file}`),
 ]) {
   assert.ok(!/[\u0400-\u04ff]/.test(await read(file)), `Non-English canonical source: ${file}`);

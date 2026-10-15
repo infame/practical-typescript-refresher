@@ -2,32 +2,39 @@
 
 [Abrir el entrenamiento](https://infame.github.io/practical-typescript-refresher/es/) · [English](README.md) · [Русский](README.ru.md)
 
-Para quienes ya programan pero han olvidado detalles de TypeScript. **Elegir un tema → repasar → escribir código → revisar la solución.** Los 14 capítulos, la autoevaluación opcional y la práctica están disponibles en inglés, ruso y español. Inglés es el idioma predeterminado.
+Un repaso práctico para quienes ya programan y quieren volver a TypeScript. **Elegir un tema → repasar la regla → escribir código → comparar la solución.** Los 14 capítulos y la práctica compartida están disponibles en inglés, ruso y español. El inglés es el idioma canónico.
 
-Empieza por un tema de la portada o sigue una ruta guiada. Cada capítulo tiene explicaciones, ejemplos y ejercicios con respuestas bajo spoiler. La práctica reúne tres ejercicios conectados.
+## Cómo usarlo
 
-La autoevaluación opcional contiene 12 preguntas con explicaciones, capítulos y enlaces a MDN / TypeScript / Node. No evalúa tu habilidad para programar. Los capítulos y las referencias se abren en otra pestaña; las respuestas no se guardan al salir de la página. No hay registro, analítica ni envío de respuestas.
+- Elige un tema o sigue una ruta guiada: volver a TypeScript o preparar una entrevista práctica de backend. La práctica forma parte de ambas rutas, entre el taller y la entrevista de prueba.
+- Arriba a la derecha elige el dominio de los ejemplos: catálogo de productos, analítica, trabajos en segundo plano o perfiles. Los contratos son los mismos; cambian los nombres y campos de los ejemplos.
+- Escribe tu solución en tu editor habitual, revisa los resultados esperados y después abre el spoiler. Copiar código copia un ejemplo; el sitio no ejecuta tu implementación.
+- Busca en explicaciones y código, incluidas las respuestas. El progreso se guarda en el navegador y se comparte entre idiomas.
 
-Arriba a la derecha elige idioma y dominio: catálogo, analítica, trabajos en segundo plano o perfiles. Los contratos de los tres ejercicios son iguales; cambian nombres de entidades y campos en los ejemplos. Se conservan página y recorrido. La búsqueda indexa explicaciones y código, incluidas soluciones, y enlaza a la sección correspondiente. El progreso se guarda localmente y se comparte entre idiomas.
+La autoevaluación opcional de 12 preguntas enlaza a explicaciones y referencias oficiales. Comprueba reglas concretas, no la habilidad para programar. Las respuestas no se guardan al salir de la página. No hay registro, analítica ni envío de respuestas al servidor.
 
-Dos recorridos: recuperar el lenguaje o practicar entrevistas de backend. Se cubren tipos, colecciones, concurrencia, validación, procesamiento de datos y fallos. SQL, eventos duraderos, algoritmos y Node son introducciones. React/DOM, frameworks, seguridad, diseño de sistemas, DP avanzada y transacciones distribuidas requieren preparación aparte. No es un curso exhaustivo ni una garantía de aprobar cualquier entrevista.
+## Temas
+
+Tipos, inferencia, narrowing, genéricos, comportamiento de JavaScript, colecciones, async, concurrencia, validación, carga de datos, depuración y pruebas. Diez explicaciones de errores del compilador, un taller y una entrevista de prueba ayudan a pasar de las explicaciones al código.
+
+SQL, entrega duradera, patrones de algoritmos y herramientas de Node se tratan a nivel introductorio. Frameworks, seguridad, diseño de sistemas y algoritmos especializados necesitan preparación aparte. Es un repaso, no una promesa de superar cualquier entrevista.
 
 ## Uso local
 
-Requiere Node.js 24+ y npm.
+Requiere Node.js 24+ y npm. Desde una copia del repositorio:
 
 ```sh
 npm ci
-npm run verify
+npm run build
 npm start
 ```
 
-Abre http://127.0.0.1:4173/es/. Usa un servidor HTTP: los módulos del navegador no están preparados para file://.
+Abre http://127.0.0.1:4173/es/. La versión inglesa está en `/` y la rusa en `/ru/`. Usa un servidor HTTP en vez de abrir los archivos HTML directamente.
 
-Fuentes: `lessons/` (inglés canónico), `lessons/ru/` y `lessons/es/`. Preguntas, interfaz y práctica compartida: `content/`. Implementaciones comprobadas: `examples/`. Ejecuta `npm run build` tras editar.
+## Contribuir
 
-[Contribuir](CONTRIBUTING.md) · [Contratos de práctica](docs/DOMAIN-PRACTICE.md) · [Auditoría](docs/AUDIT.md) · [Evaluación](docs/EVALUATION.md)
+Son bienvenidas las correcciones, los ejemplos más claros y los avisos sobre ejercicios confusos. Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para las fuentes, las comprobaciones y la publicación.
 
-Las pruebas de ejemplos y un experimento con LLM no demuestran eficacia educativa en personas. El evaluador `npm run eval -- /absolute/path/to/solution.ts` ejecuta código en tu equipo; usa una solución propia o revisada.
+## Licencia
 
-Si te sirve, una estrella ayuda a que otros encuentren el proyecto. Las correcciones son bienvenidas. Licencia MIT; atribución en THIRD_PARTY_NOTICES.md.
+[MIT](LICENSE). Atribución de dependencias en [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
