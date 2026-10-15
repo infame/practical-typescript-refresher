@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#f8fafc"/>
+  <rect x="0" y="0" width="16" height="630" fill="#2563eb"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="76" y="87" font-size="22" font-weight="700" letter-spacing="3" fill="#536174">A PRACTICAL HANDBOOK</text>
+    <text x="72" y="210" font-size="86" font-weight="700" letter-spacing="-3" fill="#142033">Practical TypeScript</text>
+    <text x="72" y="307" font-size="86" font-weight="700" letter-spacing="-3" fill="#2563eb">Refresher.</text>
+    <text x="76" y="380" font-size="30" fill="#536174">For developers who know it. And forgot a bit.</text>
+    <path d="M76 441H1124" stroke="#d9e1ea" stroke-width="2"/>
+    <text x="76" y="494" font-size="25" fill="#142033">Explanations · Coding practice · Official references</text>
+    <text x="76" y="567" font-size="21" fill="#536174">Open source</text>
+    <text x="1124" y="567" font-size="21" text-anchor="end" fill="#536174">EN / ES / RU</text>
+  </g>
+</svg>

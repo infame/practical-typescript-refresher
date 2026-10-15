@@ -5,6 +5,7 @@ import { domains, adaptDomain, escape, renderContent } from './course-content.mj
 
 const root = path.resolve(import.meta.dirname, '..'),
   dist = path.join(root, 'dist');
+const siteUrl = 'https://infame.github.io/practical-typescript-refresher/';
 const config = JSON.parse(await fs.readFile(path.join(root, 'course.json'), 'utf8'));
 const translations = JSON.parse(await fs.readFile(path.join(root, 'content/ui.json'), 'utf8'));
 const files = (await fs.readdir(path.join(root, 'lessons')))
@@ -19,6 +20,10 @@ await fs.copyFile(
 for (const dir of ['lessons', 'examples', 'docs', 'content'])
   await fs.cp(path.join(root, dir), path.join(dist, dir), { recursive: true });
 await fs.mkdir(path.join(dist, 'assets'));
+const socialImage = await fs.readFile(path.join(root, 'assets/social-preview.png'));
+const socialImageName = `social-preview-${createHash('sha256').update(socialImage).digest('hex').slice(0, 12)}.png`;
+await fs.writeFile(path.join(dist, 'assets', socialImageName), socialImage);
+const socialImageUrl = new URL(`assets/${socialImageName}`, siteUrl).href;
 const assetVersions = {};
 for (const file of ['search.mjs', 'app.js', 'style.css', 'highlight.css']) {
   let source = await fs.readFile(path.join(root, 'assets', file), 'utf8');
@@ -127,7 +132,15 @@ for (const lang of ['en', 'ru', 'es']) {
   const start = byNumber.get(routeIds[0]);
   function shell(title, body, lesson = null) {
     const current = lesson?.number || 0;
-    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css?v=${assetVersions['highlight.css']}"><link rel="stylesheet" href="${base}assets/style.css?v=${assetVersions['style.css']}"><script src="${base}assets/course-${lang}.js?v=${courseVersion}" defer></script><script src="${base}assets/app.js?v=${assetVersions['app.js']}" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select" disabled>${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select" disabled>${[
+    const pageUrl = new URL(`${lang === 'en' ? '' : `${lang}/`}${lesson?.href || ''}`, siteUrl)
+      .href;
+    const socialTitle = lesson
+      ? `${title} · Practical TypeScript Refresher`
+      : 'Practical TypeScript Refresher';
+    const socialAlt =
+      'Practical TypeScript Refresher. Explanations, coding practice and official references. EN / ES / RU.';
+    const socialMeta = `<link rel="canonical" href="${pageUrl}"><meta property="og:type" content="website"><meta property="og:site_name" content="Practical TypeScript Refresher"><meta property="og:title" content="${escape(socialTitle)}"><meta property="og:description" content="${escape(ui.description)}"><meta property="og:url" content="${pageUrl}"><meta property="og:locale" content="${{ en: 'en_US', es: 'es_ES', ru: 'ru_RU' }[lang]}"><meta property="og:image" content="${socialImageUrl}"><meta property="og:image:type" content="image/png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="${socialAlt}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${escape(socialTitle)}"><meta name="twitter:description" content="${escape(ui.description)}"><meta name="twitter:image" content="${socialImageUrl}"><meta name="twitter:image:alt" content="${socialAlt}">`;
+    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light">${socialMeta}<title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css?v=${assetVersions['highlight.css']}"><link rel="stylesheet" href="${base}assets/style.css?v=${assetVersions['style.css']}"><script src="${base}assets/course-${lang}.js?v=${courseVersion}" defer></script><script src="${base}assets/app.js?v=${assetVersions['app.js']}" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select" disabled>${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select" disabled>${[
       ['en', 'English'],
       ['ru', 'Русский'],
       ['es', 'Español'],

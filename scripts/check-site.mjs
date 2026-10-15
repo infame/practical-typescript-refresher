@@ -19,6 +19,16 @@ const allowedAssets = new Set([
   ...Object.keys(assetVersions),
   ...['en', 'ru', 'es'].map((lang) => `course-${lang}.js`),
 ]);
+const socialImage = await fs.readFile(path.join(root, '../assets/social-preview.png'));
+const socialImageName = `social-preview-${createHash('sha256').update(socialImage).digest('hex').slice(0, 12)}.png`;
+allowedAssets.add(socialImageName);
+const publishedImage = await fs.readFile(path.join(root, 'assets', socialImageName));
+if (
+  !publishedImage.equals(socialImage) ||
+  publishedImage.readUInt32BE(16) !== 1200 ||
+  publishedImage.readUInt32BE(20) !== 630
+)
+  throw new Error('Missing or incorrect social preview image');
 for (const file of await fs.readdir(path.join(root, 'assets')))
   if (!allowedAssets.has(file)) throw new Error('Unexpected published asset: ' + file);
 for (const lang of ['en', 'ru', 'es']) {
@@ -30,6 +40,24 @@ for (const lang of ['en', 'ru', 'es']) {
   for (const page of pages) {
     const html = await fs.readFile(path.join(folder, page), 'utf8');
     pagesChecked++;
+    const canonical = new URL(
+      `${lang === 'en' ? '' : `${lang}/`}${page === 'index.html' ? '' : page}`,
+      'https://infame.github.io/practical-typescript-refresher/',
+    ).href;
+    if (
+      !html.includes(`<link rel="canonical" href="${canonical}">`) ||
+      !html.includes(`<meta property="og:url" content="${canonical}">`)
+    )
+      throw new Error('Incorrect canonical or social URL: ' + lang + '/' + page);
+    if (
+      !html.includes(
+        `<meta property="og:image" content="https://infame.github.io/practical-typescript-refresher/assets/${socialImageName}">`,
+      )
+    )
+      throw new Error('Missing absolute social image URL: ' + lang + '/' + page);
+    for (const property of ['og:title', 'og:description', 'og:image:alt'])
+      if (!new RegExp(`<meta property="${property}" content="[^"]+">`).test(html))
+        throw new Error('Missing social metadata: ' + property);
     if (!html.includes(`assets/course-${lang}.js?v=${version}`))
       throw new Error('Unversioned or mismatched course data: ' + page);
     for (const file of ['app.js', 'style.css', 'highlight.css'])
