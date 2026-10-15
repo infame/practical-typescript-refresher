@@ -1,7 +1,7 @@
 {
   "en": {
     "brand": "Practical TypeScript",
-    "description": "Refresh TypeScript with explanations, coding exercises and official references.",
+    "description": "A practical TypeScript refresher for experienced developers: explanations, coding exercises, explained solutions and links to official documentation.",
     "domain": "Example domain",
     "language": "Language",
     "catalog": "Product catalog",
@@ -111,7 +111,7 @@
   },
   "ru": {
     "brand": "Практический TypeScript",
-    "description": "Повторить TypeScript: объяснения, задачи на код и официальные справочники.",
+    "description": "Практический хэндбук по TypeScript для опытных разработчиков: объяснения, задачи на код, решения с разбором и ссылки на официальную документацию.",
     "domain": "Домен примеров",
     "language": "Язык",
     "catalog": "Каталог товаров",
@@ -217,7 +217,7 @@
   },
   "es": {
     "brand": "TypeScript práctico",
-    "description": "Repasa TypeScript con explicaciones, ejercicios de código y referencias oficiales.",
+    "description": "Un repaso práctico de TypeScript para desarrolladores con experiencia: explicaciones, ejercicios de código, soluciones comentadas y documentación oficial.",
     "domain": "Dominio de ejemplos",
     "language": "Idioma",
     "catalog": "Catálogo de productos",
