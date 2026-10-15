@@ -118,6 +118,26 @@ export async function processEntities(
 }
 ```
 
-## Comprobar tu intento
+## Revisa tu solución
 
-Prueba cero, campos ausentes, duplicados, versiones iguales y antiguas, ámbitos, finalización inversa, throw síncrono y límite inválido. Ejecuta `npm run check` y `npm test`. Cambia la política de fallo o añade un campo y repite sin respuesta.
+Escribe y ejecuta tu implementación en tu editor habitual de TypeScript. Recorre las comprobaciones siguientes y después abre cada spoiler para comparar el razonamiento. El botón Copiar código copia el ejemplo mostrado; no ejecuta ni comprueba tu solución.
+
+### Comprobaciones del parser
+
+- Entrada válida con espacios alrededor de los IDs y `metric: 0` → IDs sin espacios, cero conservado y un objeto nuevo. Los campos adicionales se ignoran.
+- `null`, un array, un campo ausente, un ID vacío, una versión negativa o fraccionaria, una cadena numérica, `NaN` o `Infinity` → lanzar un `Error`.
+- Una cadena obligatoria heredada del prototipo → rechazarla; el contrato exige propiedades propias.
+
+### Comprobaciones de deduplicación
+
+- Una entidad con versiones `3, 1, 3` → gana el primer registro de versión 3.
+- Repetir el mismo `sourceId`/`eventId` → una sola entrega cuenta. El mismo ID de entidad en dos fuentes → dos resultados independientes.
+- IDs con separadores → las claves siguen siendo distintas. El orden corresponde a la primera aparición de cada entidad; la entrada no cambia.
+
+### Comprobaciones async
+
+- Las escrituras terminan en orden inverso → los resultados conservan el orden de entrada; el máximo de escrituras activas no supera `limit`.
+- Una escritura rechaza o lanza `undefined` → esa posición tiene `ok: false`; los elementos siguientes continúan. `ok: true` aparece solo cuando termina la escritura.
+- Entrada vacía con límite válido → `[]`. Un límite inválido, incluso con entrada vacía → rechazo con `RangeError`.
+
+Ejecuta el comprobador de tipos y las pruebas de tu proyecto sobre **tu implementación**. Por último, cambia una condición, como el desempate o la política de fallos, cierra las respuestas e implementa la variación por tu cuenta.

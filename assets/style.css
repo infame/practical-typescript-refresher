@@ -498,9 +498,13 @@ button[aria-pressed='true'] {
   color: var(--ink);
 }
 .course-menu {
-  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - var(--menu-reserve, 180px));
   overflow-y: auto;
+  overscroll-behavior-y: none;
+  scrollbar-gutter: stable;
+  scroll-padding-block: 12px;
   padding-right: 6px;
+  padding-bottom: 12px;
 }
 .tracks {
   display: grid;
@@ -759,6 +763,40 @@ legend {
 }
 .practice-prerequisites {
   margin-bottom: 24px;
+}
+.code-block {
+  margin: 1em 0;
+}
+.code-tools {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.code-tools [role='status'] {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+.copy-code {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  font-size: 0.8rem;
+  background: var(--paper);
+  color: var(--blue);
+  border: 1px solid var(--line);
+}
+.copy-code:hover {
+  background: var(--pale);
+}
+.code-block pre {
+  margin: 0;
+}
+@media print {
+  .code-tools {
+    display: none;
+  }
 }
 @media (max-width: 760px) {
   .site-header {

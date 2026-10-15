@@ -39,8 +39,20 @@ for (const lang of ['en', 'ru', 'es']) {
     for (const id of ['domain-select', 'language-select', 'chapter-search'])
       if (!html.includes(`id="${id}"`)) throw new Error('Missing global control ' + id);
     const chapter = !['index.html', 'practice.html'].includes(page);
-    if (chapter && (html.match(/class="pager"/g) || []).length !== 2)
+    if ((chapter || page === 'practice.html') && (html.match(/class="pager"/g) || []).length !== 2)
       throw new Error('Missing navigation');
+    const stepIds = [...html.matchAll(/data-step="([^"]+)"/g)].map((match) => match[1]);
+    if (stepIds.length !== count + 1 || new Set(stepIds).size !== stepIds.length)
+      throw new Error('Learning path must include every chapter and practice once');
+    if (stepIds.at(-2) !== 'practice' || stepIds.at(-1) !== '10-mock-interview')
+      throw new Error('Practice must precede the mock interview');
+    if (page === 'practice.html') {
+      if (!html.includes('data-step="practice" aria-current="page"'))
+        throw new Error('Practice is not the active learning step');
+      if (!html.includes('id="complete-button"')) throw new Error('Practice cannot be completed');
+      if (/href="[^"]*\.(?:md|ts)"/.test(html))
+        throw new Error('Unexpected practice source download');
+    }
     if (chapter && !html.includes('class="solution"')) throw new Error('Missing spoiler');
     if (chapter && !html.includes('<nav class="section-nav"'))
       throw new Error('Missing visible chapter contents');

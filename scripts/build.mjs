@@ -61,10 +61,12 @@ for (const lang of ['en', 'ru', 'es']) {
     }),
   );
   const byNumber = new Map(lessons.map((l) => [l.number, l]));
+  const practice = { id: 'practice', number: 0, title: ui.practice, href: 'practice.html' };
+  const byStep = new Map([...byNumber, ['practice', practice]]);
   for (const track of Object.values(config.tracks))
-    if (track.chapters.some((n) => !byNumber.has(n))) throw new Error('Invalid route');
-  const routeIds = config.tracks.refresher.chapters;
-  const ordered = routeIds.map((n) => byNumber.get(n));
+    if (track.steps.some((n) => !byStep.has(n))) throw new Error('Invalid route');
+  const routeIds = config.tracks.refresher.steps;
+  const ordered = routeIds.map((n) => byStep.get(n));
   const questions = JSON.parse(
     await fs.readFile(path.join(root, `content/questions.${lang}.json`), 'utf8'),
   );
@@ -136,17 +138,20 @@ for (const lang of ['en', 'ru', 'es']) {
       )
       .join(
         '',
-      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#topics">${ui.topics}</a><a href="practice.html">${ui.practice}</a><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" disabled type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><p class="storage-note" hidden>${ui.storageNote}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
+      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#topics">${ui.topics}</a><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" disabled type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${ordered.length}" value="0">0%</progress><p class="storage-note" hidden>${ui.storageNote}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-step="${l.id}" ${lesson?.id === l.id ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
   }
   async function output(file, html) {
     await fs.writeFile(path.join(directory, file), html);
     if (lang === 'en') await fs.writeFile(path.join(root, file), html);
   }
   function pager(lesson, location) {
-    const index = ordered.findIndex((l) => l.number === lesson.number),
+    const index = ordered.findIndex((l) => l.id === lesson.id),
       prev = ordered[index - 1],
       next = ordered[index + 1];
-    return `<nav class="pager" aria-label="${ui.navigation}"><a data-prev href="${prev?.href || 'index.html'}"><span>‹ ${ui.prev}</span><small>${escape(prev?.title || ui.home)}</small></a><span class="page-count">${index + 1} / ${lessons.length}</span><a data-next href="${next?.href || 'practice.html'}"><span>${ui.next} ›</span><small>${escape(next?.title || ui.practice)}</small></a></nav>`;
+    return `<nav class="pager" aria-label="${ui.navigation}"><a data-prev href="${prev?.href || 'index.html'}"><span>‹ ${ui.prev}</span><small>${escape(prev?.title || ui.home)}</small></a><span class="page-count">${index + 1} / ${ordered.length}</span><a data-next href="${next?.href || 'index.html#topics'}"><span>${next ? ui.next : ui.home} ›</span><small>${escape(next?.title || ui.finished)}</small></a></nav>`;
+  }
+  function completion() {
+    return `<div class="completion"><button id="complete-button" type="button" disabled aria-pressed="false">${ui.mark}</button><span id="completion-status">${ui.tryFirst}</span></div>`;
   }
   function vocabulary() {
     return `<section class="domain-vocabulary"><strong>${ui.domainModel}: <span id="domain-name">${ui.catalog}</span></strong><p id="domain-description">${escape(ui.domainDescriptions.catalog)}</p><p>${ui.entity}: <code id="domain-entity">Product</code> · ID: <code id="domain-id">productId</code> · ${ui.metric}: <code id="domain-metric">price</code></p><small>${ui.terms}</small></section>`;
@@ -158,7 +163,7 @@ for (const lang of ['en', 'ru', 'es']) {
     const rendered = pages.catalog[lesson.id];
     const page = shell(
       lesson.title,
-      `${pager(lesson, 'top')}<div class="lesson-meta"><span id="route-label">${ui.routeRefresh}</span><a href="${base + lesson.sourcePath}" id="markdown-link">${ui.markdown}</a></div>${vocabulary()}<div id="lesson-toc">${toc(rendered)}</div><article id="lesson-article">${rendered.html}</article><div class="completion"><button id="complete-button" type="button" disabled aria-pressed="false">${ui.mark}</button><span id="completion-status">${ui.tryFirst}</span></div>${pager(lesson, 'bottom')}<p><a href="practice.html">${ui.practiceNext}</a></p>`,
+      `${pager(lesson, 'top')}<div class="lesson-meta"><span id="route-label">${ui.routeRefresh}</span><a href="${base + lesson.sourcePath}" id="markdown-link">${ui.markdown}</a></div>${vocabulary()}<div id="lesson-toc">${toc(rendered)}</div><article id="lesson-article">${rendered.html}</article>${completion()}${pager(lesson, 'bottom')}`,
       lesson,
     );
     await output(lesson.href, page);
@@ -168,7 +173,8 @@ for (const lang of ['en', 'ru', 'es']) {
     'practice.html',
     shell(
       ui.practice,
-      `<h1>${ui.practice}</h1><p>${ui.practiceIntro}</p>${vocabulary()}<section class="practice-prerequisites"><h2>${ui.prerequisites}</h2><p>${[3, 1, 5, 9].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p></section><article id="lesson-article">${pract.html}</article><p><a href="${base}content/practice.${lang}.md">${ui.markdown}</a> · <a href="${base}examples/training-core.ts">TypeScript</a></p><a class="primary-link" href="${byNumber.get(10).href}">${escape(byNumber.get(10).title)}</a>`,
+      `${pager(practice, 'top')}<div class="lesson-meta"><span id="route-label">${ui.routeRefresh}</span></div><h1>${ui.practice}</h1><p>${ui.practiceIntro}</p>${vocabulary()}<section class="practice-prerequisites"><h2>${ui.prerequisites}</h2><p>${[3, 1, 5, 9].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p></section><article id="lesson-article">${pract.html}</article>${completion()}${pager(practice, 'bottom')}`,
+      practice,
     ),
   );
   const quiz = `<section id="diagnostic"><h2>${ui.diagnostic}</h2><p>${ui.diagnosticIntro}</p><details><summary>${ui.startDiagnostic}</summary><form id="diagnostic-form">${questions.map((q, i) => `<fieldset disabled><legend>${i + 1}. ${escape(q.topic)}</legend>${renderContent('```ts\n' + q.code + '\n```', ui.solution).html}<p>${escape(q.prompt)}</p>${[...q.options, ui.unknown].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}">${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit" disabled>${ui.showGaps}</button><button type="reset" class="secondary-button" disabled>${ui.reset}</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
@@ -188,7 +194,7 @@ for (const lang of ['en', 'ru', 'es']) {
   const tracks = ['refresher', 'interview']
     .map(
       (key) =>
-        `<section class="track"><h3>${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</h3><p>${key === 'refresher' ? ui.routeRefreshDesc : ui.routeInterviewDesc}</p><a class="primary-link" href="${byNumber.get(config.tracks[key].chapters[0]).href}?track=${key}">${ui.startRoute}: ${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</a></section>`,
+        `<section class="track"><h3>${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</h3><p>${key === 'refresher' ? ui.routeRefreshDesc : ui.routeInterviewDesc}</p><a class="primary-link" href="${byStep.get(config.tracks[key].steps[0]).href}?track=${key}">${ui.startRoute}: ${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</a></section>`,
     )
     .join('');
   const topics = `<section id="topics"><h2>${ui.topics}</h2><p>${ui.topicsIntro}</p><div class="topic-groups">${ui.topicGroups

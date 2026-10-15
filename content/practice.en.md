@@ -116,6 +116,26 @@ export async function processEntities(
 }
 ```
 
-## Verify your attempt
+## Check your solution
 
-Test zero, absent fields, a repeated event, equal and older versions, scope collisions, reversed completion, synchronous throw and invalid limit. Run `npm run check` and `npm test`. Then change the failure policy or add a new field and implement again without the answer.
+Write and run your implementation in your usual TypeScript editor. Work through the checks below, then open each spoiler and compare the reasoning. The Copy code button copies a displayed example; it does not run or check your solution.
+
+### Parser checks
+
+- Valid input with surrounding spaces in the IDs and `metric: 0` → trimmed IDs, zero preserved and a new object. Extra fields are ignored.
+- `null`, an array, a missing field, a blank ID, a negative or fractional version, a numeric string, `NaN` or `Infinity` → throw an `Error`.
+- A required string inherited from the prototype → reject it; the contract requires own fields.
+
+### Deduplication checks
+
+- One entity at versions `3, 1, 3` → the first version-3 record wins.
+- Repeat the same `sourceId`/`eventId` → one delivery counts. The same entity ID in two sources → two separate winners.
+- IDs containing separators → remain distinct. Result order follows first entity appearance; input is unchanged.
+
+### Async checks
+
+- Saves finish in reverse order → results still follow input order; peak active saves never exceeds `limit`.
+- One save rejects or throws `undefined` → that position has `ok: false`; later items still run. A save must finish before its result has `ok: true`.
+- Empty input with a valid limit → `[]`. An invalid limit, including with empty input → reject with `RangeError`.
+
+Run your editor’s type checker and tests against **your implementation**. Finally, change one condition, such as the tie-breaking or failure policy, close the answers and implement the variation yourself.

@@ -1,15 +1,37 @@
 import { normalize, searchSections, excerpt } from './search.mjs';
 const course = window.COURSE,
   { ui, lessons, domains } = course;
-const byNumber = new Map(lessons.map((l) => [l.number, l])),
-  valid = new Set(lessons.map((l) => l.id));
+const practice = { id: 'practice', number: 0, title: ui.practice, href: 'practice.html' };
+const steps = [...lessons, practice],
+  byNumber = new Map(lessons.map((l) => [l.number, l])),
+  byId = new Map(steps.map((l) => [l.id, l])),
+  valid = new Set(steps.map((l) => l.id));
 const params = new URLSearchParams(location.search),
   page = document.body.dataset.page;
-const chapter = byNumber.get(Number(document.body.dataset.lesson));
+const chapter = page === 'practice' ? practice : byNumber.get(Number(document.body.dataset.lesson));
 const requestedTrack = params.get('track');
 let trackKey = Object.hasOwn(course.tracks, requestedTrack) ? requestedTrack : 'refresher';
-if (chapter && !course.tracks[trackKey].chapters.includes(chapter.number)) trackKey = 'refresher';
-const route = course.tracks[trackKey].chapters.map((n) => byNumber.get(n));
+if (
+  chapter &&
+  !course.tracks[trackKey].steps.includes(page === 'practice' ? 'practice' : chapter.number)
+)
+  trackKey = 'refresher';
+const route = course.tracks[trackKey].steps.map((n) =>
+  n === 'practice' ? practice : byNumber.get(n),
+);
+// Reserve the header's space even before the sticky menu reaches its top offset.
+// Keeping this height stable during page scroll avoids resize-induced jumps.
+const menu = document.querySelector('.course-menu'),
+  header = document.querySelector('.site-header');
+function sizeMenu() {
+  const topPadding = parseFloat(getComputedStyle(document.querySelector('.layout')).paddingTop);
+  menu.style.setProperty(
+    '--menu-reserve',
+    `${header.getBoundingClientRect().height + topPadding + 24}px`,
+  );
+}
+sizeMenu();
+new ResizeObserver(sizeMenu).observe(header);
 const fill = (key, values = {}) => ui[key].replace(/\{(\w+)\}/g, (_, key) => values[key]);
 let completed = [],
   last = null,
@@ -72,6 +94,32 @@ function openSearchAnswer() {
     if (terms.every((t) => normalize(details.textContent).includes(t))) details.open = true;
   });
 }
+function addCopyButtons() {
+  document.querySelectorAll('pre > code').forEach((code) => {
+    const pre = code.parentElement;
+    if (pre.parentElement.classList.contains('code-block')) return;
+    const block = document.createElement('div');
+    block.className = 'code-block';
+    pre.before(block);
+    const tools = el('div', '', block);
+    tools.className = 'code-tools';
+    const status = el('span', '', tools);
+    status.setAttribute('role', 'status');
+    const button = el('button', ui.copyCode, tools);
+    button.type = 'button';
+    button.className = 'copy-code';
+    block.append(pre);
+    button.addEventListener('click', async () => {
+      status.textContent = '';
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        status.textContent = ui.copiedCode;
+      } catch {
+        status.textContent = ui.copyFailed;
+      }
+    });
+  });
+}
 function renderPage() {
   const rendered = course.pages[domain.id][page];
   if (rendered) {
@@ -112,19 +160,21 @@ function renderPage() {
         n = pager.querySelector('[data-next]');
       p.href = prev?.href || 'index.html';
       p.querySelector('small').textContent = prev?.title || ui.home;
-      n.href = next?.href || 'practice.html';
-      n.querySelector('small').textContent = next?.title || ui.practice;
+      n.href = next?.href || 'index.html#topics';
+      n.querySelector('span').textContent = `${next ? ui.next : ui.home} ›`;
+      n.querySelector('small').textContent = next?.title || ui.finished;
       pager.querySelector('.page-count').textContent = `${index + 1} / ${route.length}`;
     });
   }
   const resume = document.getElementById('resume-link'),
-    remembered = lessons.find((l) => l.id === last);
+    remembered = byId.get(last);
   if (resume && remembered) {
     resume.href = remembered.href;
     resume.textContent = ui.continueLabel + ': ' + remembered.title;
   }
   internalLinks();
   openSearchAnswer();
+  addCopyButtons();
   const url = new URL(location.href);
   url.searchParams.set('domain', domain.id);
   if (requestedTrack) url.searchParams.set('track', trackKey);
@@ -160,8 +210,8 @@ function progress() {
   bar.value = count;
   bar.textContent = percent + '%';
   document.querySelector('.storage-note').hidden = storageWorks;
-  document.querySelectorAll('[data-chapter]').forEach((a) => {
-    const lesson = byNumber.get(Number(a.dataset.chapter));
+  document.querySelectorAll('[data-step]').forEach((a) => {
+    const lesson = byId.get(a.dataset.step);
     const position = route.findIndex((l) => l.id === lesson.id);
     a.closest('li').hidden = position < 0;
     a.querySelector('.chapter-number').textContent = position + 1;
@@ -171,7 +221,7 @@ function progress() {
   });
   const chapterList = document.querySelector('.chapters');
   for (const lesson of route)
-    chapterList.append(document.querySelector(`[data-chapter="${lesson.number}"]`).closest('li'));
+    chapterList.append(document.querySelector(`[data-step="${lesson.id}"]`).closest('li'));
   const button = document.getElementById('complete-button');
   if (button) {
     const done = completed.includes(chapter.id);
