@@ -68,7 +68,6 @@ for (const lang of ['en', 'ru', 'es']) {
 }
 for (const file of [
   'course.json',
-  'training.json',
   'docs/evaluation-results.json',
   'content/questions.en.json',
   'content/practice.en.md',
