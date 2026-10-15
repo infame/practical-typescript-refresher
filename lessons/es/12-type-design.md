@@ -4,7 +4,7 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Qué relación conserva el generic
 
-identity relaciona entrada y salida mediante T. Un generic usado una sola vez puede no aportar nada. groupBy conserva tipos de elemento y clave; mapLimit entrada y resultado; getField clave y valor. Elige el API mínimo que expresa la relación.
+`identity` relaciona entrada y salida mediante `T`. Un generic usado una sola vez puede no aportar nada. `groupBy` conserva tipos de elemento y clave; `mapLimit` entrada y resultado; `getField` clave y valor. Elige el API mínimo que expresa la relación.
 
 ```ts check
 function identity<T>(value: T): T { return value; }
@@ -12,7 +12,9 @@ function identity<T>(value: T): T { return value; }
 
 ## Typeof, keyof e indexed access
 
-typeof en posición de tipo extrae el tipo de un valor; keyof sus claves; indexed access sus valores. Evita mantener listas duplicadas de configuración. Object.keys suele devolver string[] porque un objeto estructural puede tener más propiedades runtime. Afirmar (keyof T)[] requiere supuestos más fuertes.
+typeof en posición de tipo extrae el tipo de un valor; `keyof` sus claves; indexed access sus valores. Evita mantener listas duplicadas de configuración.
+
+`Object.keys` suele devolver `string[]` porque un objeto estructural puede tener más propiedades runtime. Afirmar `(keyof T)[]` requiere supuestos más fuertes.
 
 ```ts check
 const sourceNames = { primary: "MLS", secondary: "Partner" } as const;
@@ -22,7 +24,9 @@ type SourceName = (typeof sourceNames)[SourceKey]; // "MLS" | "Partner"
 
 ## Mapped types
 
-Transforman el tipo de cada campo. Un patch clearable añade null y optional a campos editables; no incluyas IDs por accidente. El tipo no aplica el patch: una función debe validar, distinguir ausencia y construir el estado.
+Transforman el tipo de cada campo. Un patch clearable añade `null` y optional a campos editables; no incluyas IDs por accidente.
+
+El tipo no aplica el patch: una función debe validar, distinguir ausencia y construir el estado.
 
 ```ts check
 type ClearablePatch<T> = {
@@ -34,7 +38,9 @@ type Patch = ClearablePatch<Editable>;
 
 ## Conditional types e infer
 
-infer extrae una parte que coincide. ReturnType obtiene retorno y Awaited modela await sin ejecutar funciones. Un parámetro desnudo a la izquierda de extends distribuye sobre union; envolver en tuplas comprueba la unión completa. Sirve para leer bibliotecas, pero una firma normal suele ser mejor para una tarea pequeña.
+`infer` extrae una parte que coincide. `ReturnType` obtiene retorno y `Awaited` modela `await` sin ejecutar funciones.
+
+Un parámetro desnudo a la izquierda de `extends` distribuye sobre union; envolver en tuplas comprueba la unión completa. Sirve para leer bibliotecas, pero una firma normal suele ser mejor para una tarea pequeña.
 
 ```ts check
 type Returned<F> = F extends (...args: never[]) => infer R ? R : never;
@@ -56,7 +62,9 @@ type B = AllStrings<"x" | 42>; // false
 
 ## Overloads
 
-Expresan entradas y salidas correspondientes. El caller ve overloads, no la firma de implementación. Una entrada union puede no encajar en ninguno: añade overload union o usa una firma union si no necesitas correlación exacta. Mantén el conjunto explicable.
+Expresan entradas y salidas correspondientes. El caller ve overloads, no la firma de implementación.
+
+Una entrada union puede no encajar en ninguno: añade overload union o usa una firma union si no necesitas correlación exacta. Mantén el conjunto explicable.
 
 ```ts check
 function normalize(value: string): string;
@@ -68,7 +76,9 @@ function normalize(value: string | readonly string[]): string | string[] {
 
 ## Assertions, funciones assertion y satisfies
 
-as y ! afirman sin comprobar runtime. Una función assertion sí puede verificar y estrechar tras éxito o lanzar ante fallo. satisfies comprueba compatibilidad y as const conserva literales. Configuración externa sigue necesitando validación ejecutada.
+`as` y `!` afirman sin comprobar runtime. Una función assertion sí puede verificar y estrechar tras éxito o lanzar ante fallo.
+
+`satisfies` comprueba compatibilidad y `as const` conserva literales. Configuración externa sigue necesitando validación ejecutada.
 
 ```ts check
 function assertString(value: unknown): asserts value is string {
@@ -90,7 +100,9 @@ const routes = {
 
 ## IDs con brands
 
-Una intersección con unique symbol evita mezclar casualmente IDs string. Localiza la assertion en un parser que comprueba la condición. La marca no añade un símbolo a la cadena real; restablece la garantía tras JSON. Úsala si el riesgo justifica complejidad.
+Una intersección con `unique symbol` evita mezclar casualmente IDs `string`. Localiza la assertion en un parser que comprueba la condición.
+
+La marca no añade un símbolo a la cadena real; restablece la garantía tras JSON. Úsala si el riesgo justifica complejidad.
 
 ```ts check
 declare const listingIdBrand: unique symbol;
@@ -106,7 +118,9 @@ function parseListingId(value: unknown): ListingId {
 
 ## Funciones y variancia
 
-Si el API puede llamar con cualquier Animal, un callback que requiere Dog falla con un gato. strictFunctionTypes protege funciones ordinarias; métodos tienen excepciones. Explica valores que el caller puede pasar y los que el callback admite.
+Si el API puede llamar con cualquier Animal, un callback que requiere Dog falla con un gato.
+
+`strictFunctionTypes` protege funciones ordinarias; métodos tienen excepciones. Explica valores que el caller puede pasar y los que el callback admite.
 
 ```ts check
 type Animal = { name: string };
@@ -123,7 +137,7 @@ Crea diccionario de handlers added y removed. added lleva métrica numérica; re
 
 ### Spoiler
 
-Recorre Event["kind"] y usa Extract<Event,{kind:K}>. La llamada dinámica `handlers[event.kind](event)` puede perder correlación; switch suele ser más claro que ocultarlo con any.
+Recorre `Event["kind"]` y usa `Extract<Event,{kind:K}>`. La llamada dinámica `handlers[event.kind](event)` puede perder correlación; switch suele ser más claro que ocultarlo con `any`.
 
 ```ts check
 type Event =

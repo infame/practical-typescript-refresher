@@ -4,11 +4,15 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## Parse an external record
 
-Implement parseRecord(unknown): { id: string; price: number | null }. Normalize a nonempty ID. Accept a finite nonnegative numeric metric, null, or a trimmed strict decimal string. Reject booleans, empty strings, hexadecimal, exponents and Infinity. Return a fresh object and ignore unrelated fields. Define your accepted decimal grammar before converting; the examples use digits with an optional nonempty fractional part.
+Implement `parseRecord(value: unknown): { id: string; price: number | null }`. Normalize a nonempty ID. Accept a finite nonnegative numeric metric, `null`, or a trimmed strict decimal `string`. Reject booleans, empty strings, hexadecimal, exponents and `Infinity`.
+
+Return a fresh object and ignore unrelated fields.
+
+Define your accepted decimal grammar before converting; the examples use digits with an optional nonempty fractional part.
 
 ### Spoiler
 
-Check object shape, ID type and normalized content. Handle null separately; for strings validate the full decimal syntax before Number. Then check finiteness and sign. Test zero, whitespace, .5 versus 0.5, exponent syntax and unsafe coercion shortcuts. The reference functions are in examples/workshop.ts.
+Check object shape, ID type and normalized content. Handle `null` separately; for strings validate the full decimal syntax before `Number`. Then check finiteness and sign. Test zero, whitespace, .5 versus 0.5, exponent syntax and unsafe coercion shortcuts. The reference functions are in `examples/workshop.ts`.
 
 ```ts
 export function parsePriceRecord(raw: unknown): { id: string; price: number } {
@@ -34,11 +38,13 @@ export function parsePriceRecord(raw: unknown): { id: string; price: number } {
 
 ## PATCH without mutation
 
-Apply a patch to an already-validated entity. Missing fields preserve values, null clears the nullable metric, zero is valid, and an empty tags array clears tags. Return a fresh object and a fresh tags array even when the patch is empty. Explicit undefined is prohibited in the patch contract.
+Apply a patch to an already-validated entity. Missing fields preserve values, `null` clears the nullable metric, zero is valid, and an empty tags array clears tags.
+
+Return a fresh object and a fresh tags array even when the patch is empty. Explicit `undefined` is prohibited in the patch contract.
 
 ### Spoiler
 
-Choose nullable fields with an explicit undefined check, not ??, because null is meaningful. Clone the selected tags array. Object spread alone leaves nested references shared. Test mutation of the result and of a supplied patch array after the call.
+Choose nullable fields with an explicit `undefined` check, not `??`, because `null` is meaningful. Clone the selected tags array. Object spread alone leaves nested references shared. Test mutation of the result and of a supplied patch array after the call.
 
 ```ts
 export type Current = { id: string; price: number | null; tags: readonly string[] };
@@ -63,15 +69,21 @@ wrong.tags.push("new");
 // wrong.price is 10, not null; current.tags is now ["old", "new"].
 ```
 
-The contract says null clears price, so ?? incorrectly turns an explicit clear into no change. Check undefined for the price field. The outer spread creates a new object but shares tags: copy the selected array independently, even for an empty patch. A meaningful test asserts null and then mutates the returned tags to verify that current.tags remains unchanged. Zero, absent fields and empty replacement arrays exercise different branches.
+The contract says `null` clears price, so `??` incorrectly turns an explicit clear into no change. Check `undefined` for the price field.
+
+The outer spread creates a new object but shares tags: copy the selected array independently, even for an empty patch.
+
+A meaningful test asserts `null` and then mutates the returned tags to verify that `current.tags` remains unchanged.
+
+Zero, absent fields and empty replacement arrays exercise different branches.
 
 ## Async cache and concurrent callers
 
-Implement an async memoizer that coalesces calls with the same key while loading and retains successful values, including undefined. Failed loads must be evicted so a later caller can retry. A synchronous throw also becomes a rejected promise. Define key identity, retention and invalidation separately; this small cache has no TTL or capacity policy.
+Implement an `async` memoizer that coalesces calls with the same key while loading and retains successful values, including `undefined`. Failed loads must be evicted so a later caller can retry. A synchronous throw also becomes a rejected promise. Define key identity, retention and invalidation separately; this small cache has no TTL or capacity policy.
 
 ### Spoiler
 
-Cache the in-flight promise before other callers can start another load. Promise.resolve().then invokes the loader after the cache entry is set and captures synchronous throws. On rejection, evict that entry. Distinguish absence of an entry from a successfully cached undefined. Failed promises must not remain permanently cached.
+Cache the in-flight promise before other callers can start another load. `Promise.resolve()`.then invokes the loader after the cache entry is set and captures synchronous throws. On rejection, evict that entry. Distinguish absence of an entry from a successfully cached `undefined`. Failed promises must not remain permanently cached.
 
 ```ts
 export function memoizeAsync<K, V>(
@@ -100,7 +112,7 @@ Load IDs with bounded concurrency, preserve input positions and return a success
 
 ### Spoiler
 
-Catch inside the mapLimit callback, return a discriminated failure with a normalized message, and let successful results remain values. Error or String(error) handles ordinary thrown values without assuming every exception is Error. Type the callback result union explicitly when inference widens the discriminator.
+Catch inside the `mapLimit` callback, return a discriminated failure with a normalized message, and let successful results remain values. `Error` or `String(error)` handles ordinary thrown values without assuming every exception is `Error`. Type the callback result union explicitly when inference widens the discriminator.
 
 ```ts
 import { mapLimit } from "./core.ts";

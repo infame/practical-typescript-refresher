@@ -15,3 +15,5 @@ Focus on experienced developers returning to TypeScript and practical backend co
 Report issues with language, domain, chapter/section and a minimal example. Describe changes to evaluation inputs; exposed tasks are not unseen learning benchmarks. Do not equate a quiz score, chapter completion, example tests or an LLM experiment with demonstrated human learning.
 
 English is the canonical language of root metadata and shared documentation. Store localized files under explicit locale paths. Run `npm run check:content` for edition parity and canonical-source checks. Recorded evaluation data/hashes are historical evidence; content edits must not replace them with current-input hashes.
+
+In lesson prose, format identifiers, expressions, file paths and commands as inline code. Use lists for field validation, behavior requirements and test cases; keep one main idea per paragraph. Preserve section order so translated anchors still match, and keep formatting edits separate from changes to fenced examples.

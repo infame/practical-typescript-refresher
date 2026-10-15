@@ -49,7 +49,7 @@ Borrar físicamente v5 permite que v3 recree la entidad. Un tombstone conserva b
 
 ## Escribir SQL a mano
 
-ROW_NUMBER por clave selecciona la fila reciente con desempate determinista. LEFT JOIN debe conservar filas sin coincidencia; respeta la semántica de null al contar. Elige índices según predicados y joins, y mira el plan real. Los ejemplos SQL requieren esquema y base apropiados para ejecutarse.
+ROW_NUMBER por clave selecciona la fila reciente con desempate determinista. LEFT JOIN debe conservar filas sin coincidencia; respeta la semántica de `null` al contar. Elige índices según predicados y joins, y mira el plan real. Los ejemplos SQL requieren esquema y base apropiados para ejecutarse.
 
 ```sql
 SELECT source_id, listing_id, price_cents, updated_at
@@ -76,7 +76,7 @@ v5 y v3 de la misma entidad terminan en orden inverso. ¿Qué protege el estado?
 
 ### Spoiler
 
-Una escritura condicional atómica mantiene v5. Para el correo necesitas identidad de entrega, inbox/outbox duradero y consumidor tolerante a replay. Un Set local desaparece al reiniciar y no coordina workers de procesos distintos.
+Una escritura condicional atómica mantiene v5. Para el correo necesitas identidad de entrega, inbox/outbox duradero y consumidor tolerante a replay. Un `Set` local desaparece al reiniciar y no coordina workers de procesos distintos.
 
 ## Referencias oficiales
 

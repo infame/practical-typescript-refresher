@@ -4,7 +4,7 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## Review a broken importer
 
-Look for an async forEach whose promises are not awaited, wrong deduplication scope, a truthiness check dropping zero, an assertion pretending to validate JSON, and a find-then-write race. Check both the returned report and when the function actually completes. Review the contract before optimizing or rewriting unfamiliar code.
+Look for an `async` forEach whose promises are not awaited, wrong deduplication scope, a truthiness check dropping zero, an assertion pretending to validate JSON, and a find-then-write race. Check both the returned report and when the function actually completes. Review the contract before optimizing or rewriting unfamiliar code.
 
 ```ts
 async function importListings(records: any[]) {
@@ -32,7 +32,7 @@ Compare the implementation with the stated contract. Explain which check establi
 
 ## Explain a bug with evidence
 
-Give a concrete input, the expected result and the actual behavior. Then point to the invariant violated by the code. For async bugs, show the sequence of operations, not just a final value. A minimal reproducer is more useful than a general opinion about coding style.
+Give a concrete input, the expected result and the actual behavior. Then point to the invariant violated by the code. For `async` bugs, show the sequence of operations, not just a final value. A minimal reproducer is more useful than a general opinion about coding style.
 
 ## Test behavior through dependencies
 
@@ -66,7 +66,7 @@ test("respects concurrency", async () => {
 
 ## Choose edge cases
 
-Cover empty input, zero, null, missing fields, repeated delivery, equal and reversed versions, invalid limits, synchronous throw, throw undefined and reversed completion order. Test no mutation when that is promised. Concurrency, input-order output and per-key ordering are separate assertions.
+Cover empty input, zero, `null`, missing fields, repeated delivery, equal and reversed versions, invalid limits, synchronous throw, `throw undefined` and reversed completion order. Test no mutation when that is promised. Concurrency, input-order output and per-key ordering are separate assertions.
 
 ## A minimal debugging loop
 
@@ -82,4 +82,4 @@ Check whether new work stops, whether active operations are drained or cancelled
 
 ## Explain the fix
 
-Describe the triggering input, changed behavior and evidence. “The importer now waits for repository completion” states a user-visible guarantee; naming await alone does not.
+Describe the triggering input, changed behavior and evidence. “The importer now waits for repository completion” states a user-visible guarantee; naming `await` alone does not.

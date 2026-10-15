@@ -17,6 +17,16 @@ for (const lang of ['en', 'ru', 'es']) {
     `Missing UI keys: ${lang}`,
   );
   assert.deepEqual(
+    Object.keys(ui[lang].domainDescriptions).sort(),
+    ['analytics', 'catalog', 'jobs', 'profiles'],
+    `Missing domain descriptions: ${lang}`,
+  );
+  for (const description of Object.values(ui[lang].domainDescriptions))
+    assert.ok(
+      typeof description === 'string' && description.trim(),
+      `Empty domain description: ${lang}`,
+    );
+  assert.deepEqual(
     ui[lang].topicGroups.map((group) => group[2]),
     ui.en.topicGroups.map((group) => group[2]),
     `Changed topic grouping: ${lang}`,

@@ -4,7 +4,7 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Revisar un importer roto
 
-Busca async forEach sin espera, deduplicación con ámbito equivocado, truthiness que elimina cero, assertion que finge validar y una carrera read-then-write. Comprueba tanto el informe devuelto como cuándo termina realmente la función. Revisa el contrato antes de optimizar.
+Busca `async` forEach sin espera, deduplicación con ámbito equivocado, truthiness que elimina cero, assertion que finge validar y una carrera read-then-write. Comprueba tanto el informe devuelto como cuándo termina realmente la función. Revisa el contrato antes de optimizar.
 
 ```ts
 async function importListings(records: any[]) {
@@ -32,7 +32,7 @@ Compara la implementación con el contrato y explica qué comprobación establec
 
 ## Explicar el bug con evidencia
 
-Da una entrada concreta, resultado esperado y comportamiento real. Señala el invariante incumplido. Para async, muestra la secuencia temporal de operaciones. Un reproducer mínimo comunica más que una opinión sobre estilo.
+Da una entrada concreta, resultado esperado y comportamiento real. Señala el invariante incumplido. Para `async`, muestra la secuencia temporal de operaciones. Un reproducer mínimo comunica más que una opinión sobre estilo.
 
 ## Probar mediante dependencias
 
@@ -66,7 +66,7 @@ test("respects concurrency", async () => {
 
 ## Casos de borde
 
-Incluye vacío, cero, null, campos ausentes, duplicados, versiones iguales e inversas, límite inválido, throw síncrono, throw undefined y finalización inversa. Comprueba no mutación cuando se promete. Concurrencia, orden de salida y orden por clave requieren comprobaciones distintas.
+Incluye vacío, cero, `null`, campos ausentes, duplicados, versiones iguales e inversas, límite inválido, throw síncrono, `throw undefined` y finalización inversa. Comprueba no mutación cuando se promete. Concurrencia, orden de salida y orden por clave requieren comprobaciones distintas.
 
 ## Un ciclo de depuración mínimo
 
@@ -82,4 +82,4 @@ Comprueba nuevos inicios, espera o cancelación del trabajo activo, selección d
 
 ## Explicar la corrección
 
-Describe entrada desencadenante, cambio de comportamiento y prueba. “Ahora espera la finalización del repositorio” expresa una garantía observable; mencionar await por sí solo no.
+Describe entrada desencadenante, cambio de comportamiento y prueba. “Ahora espera la finalización del repositorio” expresa una garantía observable; mencionar `await` por sí solo no.

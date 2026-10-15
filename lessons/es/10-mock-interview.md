@@ -1,18 +1,57 @@
 # Simulación de entrevista backend
 
-Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio antes de abrir la respuesta. Algunos bloques comparten contexto; solo `ts check` identifica comprobaciones independientes.
+Un ejercicio de 45–60 minutos sobre procesamiento de datos backend. Aclara el contrato, escribe la implementación y después compárala con el spoiler.
+
+La referencia ejecutable está en `examples/core.ts`; sus tests, en `examples/core.test.ts`. Los bloques siguientes comparten contexto.
 
 ## El ejercicio
 
-Implementa importUpdates(raw, repository, concurrency). Entradas unknown con sourceId, eventId e ID de entidad no vacíos, version entero seguro no negativo y métrica finita no negativa. Mantén máximo por fuente/entidad y omite versiones iguales. Informa entradas inválidas, aplicadas, antiguas y fallidas. Versiones iguales tienen payload inmutable; no hay efectos externos adicionales.
+Implementa `importUpdates(raw, repository, concurrency)`. La entrada es `readonly unknown[]`.
+
+Cada actualización válida contiene:
+
+- `sourceId`: una cadena no vacía ni compuesta solo por espacios que identifica el sistema o fuente.
+- `eventId`: una cadena no vacía ni compuesta solo por espacios que identifica un evento dentro de esa fuente.
+- `listingId`: una cadena no vacía ni compuesta solo por espacios que identifica la entidad dentro de esa fuente.
+- `version`: un entero seguro no negativo que ordena el estado de esa entidad.
+- `price`: un número finito no negativo. Las cadenas numéricas son inválidas; cero es válido.
+
+La clave de estado es **`(sourceId, listingId)`**. Conserva la máxima `version` almacenada por clave. Las versiones iguales son inmutables y se omiten. Este ejercicio no tiene efectos externos adicionales.
+
+El importador debe:
+
+1. Devolver exactamente un resultado por entrada, en el orden de entrada.
+2. Informar una entrada mal formada como `invalid`, con índice y explicación.
+3. Informar una escritura completada como `applied` o `stale`, con índice y `eventId`.
+4. Informar un error del repositorio como `failed` y continuar con las demás entradas.
+5. Mantener como máximo `concurrency` llamadas activas al repositorio y esperar a que terminen.
+6. No modificar los objetos de entrada.
+
+`concurrency` debe ser un entero positivo; un valor inválido rechaza toda la llamada, incluso con un lote vacío. Los errores de registros individuales forman parte del informe.
+
+**No elimines valores `eventId` repetidos antes de procesar.** Hace falta un resultado por entrada. La condición atómica de versión proporciona idempotencia del estado; deduplicar entregas es otro contrato.
 
 ## Plan de una hora
 
-Primero aclara validación, ámbito de claves, orden y fallos. Define tipos y un camino completo, después limiter e informe. Reserva el final para casos límite y explicación. Una solución simple correcta con supuestos claros es mejor que una abstracción incompleta. Prepara el entorno antes del tiempo medido.
+| Tiempo | Objetivo |
+| --- | --- |
+| 0–5 min | Aclarar ámbito de claves, versiones iguales, fallos parciales y orden. |
+| 5–15 min | Definir tipos e implementar validación. |
+| 15–30 min | Conectar el limitador, el repositorio y el informe. |
+| 30–45 min | Probar entrada inválida, versiones fuera de orden y una escritura fallida. |
+| 45–60 min | Explicar garantías, complejidad y extensiones. |
+
+Prepara el entorno antes del cronómetro. Si falta tiempo, termina primero un camino secuencial correcto y añade después concurrencia limitada.
 
 ## Contratos iniciales
 
-El repositorio ofrece upsertIfNewer atómico; el importer no debe leer y escribir por separado. El parser valida unknown. El helper concurrente es genérico; el caller decide si errores por registro son valores. examples/core.ts es la referencia ejecutable; los ejemplos por dominio conservan el algoritmo.
+`Repository.upsertIfNewer` debe ser **atómico**: comparar la versión y escribir en una sola operación del almacenamiento. El importador no puede sustituir esa garantía por una lectura y escritura separadas. No necesitas implementar una base de datos real.
+
+Separa responsabilidades:
+
+- `parseUpdate` valida un valor externo y devuelve un `ListingUpdate` nuevo.
+- `mapLimit` limita el trabajo activo y conserva las posiciones de resultado.
+- `importUpdates` convierte fallos esperados por registro en valores del informe.
 
 ```ts
 type ListingUpdate = {
@@ -35,11 +74,21 @@ type ImportResult =
 
 ## Práctica
 
-Escribe antes de abrir la respuesta. Prueba entrada inválida, cero, v5 antes de v3, igualdad, fallo de escritura y finalización del trabajo activo.
+Implementa parser, limitador e importador antes de abrir la respuesta. Incluye estos casos:
+
+- La entidad A en v5, seguida de A en v3.
+- Una cadena numérica inválida y un cero válido.
+- La entidad B en v1 cuya escritura falla.
+- Una actualización A/v5 repetida.
+- Concurrencia inválida, también con entrada vacía.
+
+Comprueba el orden de resultados, las versiones finales y la finalización del trabajo activo. Distingue la garantía de estado final de la clasificación de cada escritura.
 
 ### Spoiler
 
-Valida en la frontera, elige claves correctas, limita concurrencia y espera las llamadas incluidas en el contrato de retorno. La referencia usa escritura atómica y registra errores esperados en el informe.
+Si A/v5 se aplica antes de A/v3, sus resultados son `applied` y `stale`. Si v3 llega primero al almacenamiento, ambas pueden ser `applied`; el estado final sigue siendo v5.
+
+**El contrato garantiza la máxima versión final, no una clasificación idéntica de cada registro con cualquier orden de ejecución.** La entrada inválida produce `invalid`; el fallo de B produce `failed`; una versión igual no modifica el estado.
 
 ```ts
 async function importUpdates(
@@ -71,26 +120,46 @@ function messageOf(error: unknown): string {
 }
 ```
 
+El parser crea un objeto validado nuevo. Los bloques `catch` locales convierten fallos individuales en resultados, por lo que una escritura fallida no detiene el lote. `mapLimit` conserva posiciones y espera el trabajo activo.
+
 ## Extensión: efectos y replay
 
-Si se envía un mensaje o cambia otro recurso, seleccionar versiones no basta. Añade inbox/outbox e idempotencia downstream; explica recuperación en cada punto de caída. La deduplicación en memoria no es coordinación duradera.
+Supón que una actualización `applied` también debe enviar una notificación. Una caída tras escribir pero antes de enviar hace que el replay sea `stale`, y puede perderse la notificación.
+
+Registra el efecto de forma duradera, por ejemplo con un outbox en la misma transacción que la actualización. La entrega aún necesita una política de idempotencia o deduplicación. Un set en memoria no proporciona coordinación duradera.
 
 ## Extensión: flujo ilimitado
 
-Sustituye arrays completos por async iteration, trabajo acotado e informe incremental. Define backpressure y checkpoint duradero. No conserves cada eventId indefinidamente sin política de retención o almacenamiento.
+La API actual conserva toda la entrada y salida: **`O(n)` de memoria**. Para un flujo grande usa iteración asíncrona, trabajo activo acotado e informe incremental.
+
+Define backpressure y un checkpoint duradero. Un orden de salida estricto permite que el primer elemento lento retrase otros ya completados; limita también ese búfer, no solo el trabajo activo.
 
 ## Extensión: orden por clave
 
-Un límite global no serializa una entidad. Máximo atómico es correcto para este contrato de estado. Incrementos, transiciones y efectos intermedios pueden requerir particiones, lock por clave u otro protocolo transaccional.
+Un límite global de concurrencia no serializa actualizaciones de una entidad. La escritura atómica de máxima versión basta para este contrato de selección de estado.
+
+Incrementos, transiciones o efectos intermedios pueden necesitar una cola por partición, un bloqueo por clave u otra operación de negocio atómica. Define el orden requerido antes de elegir el mecanismo.
 
 ## Extensión: reintentos
 
-Reintenta fallos transitorios seleccionados con intentos y tiempo acotados. Determina qué operación soporta replay; un timeout no prueba que la escritura no ocurrió. Separa retry, deduplicación y selección de versión.
+Reintenta solo fallos transitorios seleccionados de operaciones seguras para repetir, con intentos y tiempo total acotados.
+
+Un timeout puede significar «se escribió, pero se perdió la respuesta». Repetir el upsert puede devolver `stale` y conservar un estado correcto. Si importa distinguir `applied` de `stale`, define cómo informar el resultado incierto del primer intento.
 
 ## Evaluar la tentativa
 
-Cuenta requisitos y tests, pero también assertions inseguras, supuestos sin explicar y ayudas usadas. Leer una respuesta no equivale a implementarla. Repite con entradas y políticas distintas.
+Revisa cinco aspectos:
+
+- **Contrato:** ¿son explícitos el ámbito, los empates y el orden de resultados?
+- **Validación:** ¿se gestionan entrada inválida y cero válido?
+- **Concurrencia:** ¿se limita el trabajo activo y se espera su finalización?
+- **Fallos:** ¿se conservan otros resultados y la garantía de estado final?
+- **Explicación:** ¿puedes justificar la implementación con tests útiles?
+
+Ejecuta `npm test` y `npm run check`. El repositorio en memoria es un doble de prueba; una base de datos real necesita tests de integración para escrituras atómicas y restricciones.
 
 ## Antes de la entrevista
 
-Ejecuta el proyecto, revisa configuración y practica con tiempo. Este ejercicio es backend/datos, no una garantía universal. Frontend, frameworks, system design y algoritmos avanzados requieren preparación aparte.
+Confirma con el reclutador el lenguaje, entorno, duración y reglas sobre documentación o AI. Practica cómo ejecutar compilador y tests antes de la ronda.
+
+Explica requisitos, algoritmo, implementación, ejemplos, complejidad y límites en ese orden. Tras revisar la respuesta, cambia una entrada o política de fallos e implementa la variante por tu cuenta.

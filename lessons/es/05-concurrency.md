@@ -4,11 +4,13 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Definir el contrato
 
-mapLimit acepta un array, un límite entero positivo y un callback async. Devuelve resultados en orden y ejecuta como máximo limit callbacks a la vez. Esta versión deja de programar al observar un fallo, espera el trabajo activo y rechaza con el primer error observado. Valida limit incluso con entrada vacía. Usa un booleano separado porque undefined puede ser un error lanzado.
+`mapLimit` acepta un array, un límite entero positivo y un callback `async`. Devuelve resultados en orden y ejecuta como máximo limit callbacks a la vez.
+
+Esta versión deja de programar al observar un fallo, espera el trabajo activo y rechaza con el primer error observado. Valida limit incluso con entrada vacía. Usa un booleano separado porque `undefined` puede ser un error lanzado.
 
 ## Workers en lugar de lotes
 
-Crea como máximo min(limit, items.length) workers con un iterador síncrono compartido. Cada uno toma un índice, espera y guarda ahí su resultado. Al acabar, toma otra entrada sin esperar al más lento de un lote fijo. De este modo aprovechas la capacidad disponible y conservas el orden de salida.
+Crea como máximo `min(limit, items.length)` workers con un iterador síncrono compartido. Cada uno toma un índice, espera y guarda ahí su resultado. Al acabar, toma otra entrada sin esperar al más lento de un lote fijo. De este modo aprovechas la capacidad disponible y conservas el orden de salida.
 
 ```ts
 async function mapLimit<T, R>(
@@ -52,11 +54,11 @@ async function mapLimit<T, R>(
 
 ## Por qué no duplican entradas
 
-Tomar el siguiente elemento ocurre síncronamente antes de await: otro worker no puede intercalarse dentro de esa operación en este diseño de un solo hilo. No es una garantía para worker_threads o varios procesos. Tras el fallo, los activos terminan y consultan el indicador antes de pedir otra entrada.
+Tomar el siguiente elemento ocurre síncronamente antes de `await`: otro worker no puede intercalarse dentro de esa operación en este diseño de un solo hilo. No es una garantía para `worker_threads` o varios procesos. Tras el fallo, los activos terminan y consultan el indicador antes de pedir otra entrada.
 
 ## Fallos parciales como datos
 
-Para continuar tras errores individuales, captura dentro del callback y devuelve una unión de éxito o fallo. El limiter conserva su política para fallos inesperados del wrapper. No sustituyas silenciosamente todo por null si el usuario necesita el motivo y la posición.
+Para continuar tras errores individuales, captura dentro del callback y devuelve una unión de éxito o fallo. El limiter conserva su política para fallos inesperados del wrapper. No sustituyas silenciosamente todo por `null` si el usuario necesita el motivo y la posición.
 
 ```ts
 type Outcome<T> =
@@ -78,11 +80,11 @@ Limitar concurrencia no limita peticiones por segundo ni implementa cancelación
 
 ## Práctica
 
-Implementa sin mirar la respuesta. Prueba retrasos diferentes, un fallo temprano, throw síncrono, throw undefined y límite inválido con entrada vacía.
+Implementa sin mirar la respuesta. Prueba retrasos diferentes, un fallo temprano, throw síncrono, `throw undefined` y límite inválido con entrada vacía.
 
 ### Spoiler
 
-Reserva el índice antes de await, guarda el primer error y un indicador independiente. Espera todos los workers activos antes de relanzar. No afirmes que el trabajo activo fue cancelado si solamente dejaste de programar nuevas entradas.
+Reserva el índice antes de `await`, guarda el primer error y un indicador independiente. Espera todos los workers activos antes de relanzar. No afirmes que el trabajo activo fue cancelado si solamente dejaste de programar nuevas entradas.
 
 #### Error plausible: limitar promesas ya iniciadas
 

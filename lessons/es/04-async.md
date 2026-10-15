@@ -4,7 +4,7 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Cuándo empieza el trabajo
 
-El executor de Promise se ejecuta inmediatamente. Una función async empieza al llamarla y se suspende en await. Guardar promises ya creadas no aplaza su trabajo: para controlar el inicio, guarda funciones o deja que los workers invoquen la operación. await no envía cálculo de CPU a otro hilo.
+El executor de `Promise` se ejecuta inmediatamente. Una función `async` empieza al llamarla y se suspende en `await`. Guardar promises ya creadas no aplaza su trabajo: para controlar el inicio, guarda funciones o deja que los workers invoquen la operación. `await` no envía cálculo de CPU a otro hilo.
 
 ```ts
 async function example() {
@@ -28,7 +28,7 @@ const b = await second;
 
 ## Secuencial o concurrente
 
-Un bucle con await ejecuta una operación después de otra. Promise.all espera operaciones independientes y conserva el orden de entrada de los resultados. map llama a todos los callbacks inmediatamente: Promise.all no limita concurrencia. Distingue dependencias de ejecución y orden de la salida.
+Un bucle con `await` ejecuta una operación después de otra. `Promise.all` espera operaciones independientes y conserva el orden de entrada de los resultados. map llama a todos los callbacks inmediatamente: `Promise.all` no limita concurrencia. Distingue dependencias de ejecución y orden de la salida.
 
 ```ts
 const results = [];
@@ -51,7 +51,9 @@ for (const outcome of outcomes) {
 
 ## Errores y await perdido
 
-Una promise sin await puede escapar de try/catch, acabar después del resultado o rechazar sin handler. Espera dentro de try si quieres capturar el rechazo. Promise.all rechaza ante el primer fallo observado, pero no cancela el resto. allSettled recoge todos los resultados. finally limpia recursos; un return o throw allí puede sustituir el resultado original.
+Una promise sin `await` puede escapar de `try/catch`, acabar después del resultado o rechazar sin handler. Espera dentro de try si quieres capturar el rechazo.
+
+`Promise.all` rechaza ante el primer fallo observado, pero no cancela el resto. allSettled recoge todos los resultados. finally limpia recursos; un return o throw allí puede sustituir el resultado original.
 
 ```ts
 async function broken(items: Item[]) {
@@ -74,7 +76,7 @@ async function load() {
 
 ## Orden del event loop
 
-El código síncrono acaba antes que los callbacks de promises. La continuación de await es una microtarea; los timers se ejecutan después y su retraso es un mínimo, no un instante garantizado. Cálculo síncrono prolongado bloquea callbacks y una cadena infinita de microtareas puede impedir otro trabajo. Node tiene colas adicionales; evita universalizar un ejemplo de navegador.
+El código síncrono acaba antes que los callbacks de promises. La continuación de `await` es una microtarea; los timers se ejecutan después y su retraso es un mínimo, no un instante garantizado. Cálculo síncrono prolongado bloquea callbacks y una cadena infinita de microtareas puede impedir otro trabajo. Node tiene colas adicionales; evita universalizar un ejemplo de navegador.
 
 ```ts
 console.log("A");
@@ -88,7 +90,7 @@ console.log("F");
 
 ## Carreras en un solo hilo
 
-Dos operaciones pueden leer un estado antes de que cualquiera vuelva de await y escriba. Un read-await-write no es atómico por tener un solo hilo JS. Usa cola por clave, escritura condicional o una transacción adecuada. Concurrencia y paralelismo de CPU son conceptos diferentes.
+Dos operaciones pueden leer un estado antes de que cualquiera vuelva de `await` y escriba. Un read-`await`-write no es atómico por tener un solo hilo JS. Usa cola por clave, escritura condicional o una transacción adecuada. Concurrencia y paralelismo de CPU son conceptos diferentes.
 
 ```ts
 async function increment() {
@@ -100,13 +102,13 @@ async function increment() {
 
 ## Práctica
 
-Predice el orden de logs síncronos, Promise.then y setTimeout. Explica por qué try/catch alrededor de una llamada sin await no captura un rechazo posterior.
+Predice el orden de logs síncronos, `Promise.then` y `setTimeout`. Explica por qué `try/catch` alrededor de una llamada sin `await` no captura un rechazo posterior.
 
 ### Spoiler
 
-Para el código anterior el orden exacto es **A, F, C, E, D, B**. A y F son síncronos. El primer then encola C; queueMicrotask encola E. Solo cuando termina C se encola D, por eso E va antes. El timer se ejecuta después de vaciar las microtareas. Envolver cálculo pesado en una función async no lo mueve a otro hilo.
+Para el código anterior el orden exacto es **A, F, C, E, D, B**. A y F son síncronos. El primer then encola C; `queueMicrotask` encola E. Solo cuando termina C se encola D, por eso E va antes. El timer se ejecuta después de vaciar las microtareas. Envolver cálculo pesado en una función `async` no lo mueve a otro hilo.
 
-Primero van los logs síncronos, después microtareas y luego el timer en el contexto mostrado. Espera dentro de try/catch o añade un handler de rechazo. Revisa si await separa la lectura y escritura de un estado compartido.
+Primero van los logs síncronos, después microtareas y luego el timer en el contexto mostrado. Espera dentro de `try/catch` o añade un handler de rechazo. Revisa si `await` separa la lectura y escritura de un estado compartido.
 
 #### Error plausible: race implica cancelación
 
@@ -127,7 +129,7 @@ async function demonstrateRace(): Promise<boolean> {
 }
 ```
 
-El deadline rechaza race, pero no work. Abrir el gate controlado prueba que la operación restante termina, sin depender de tiempos. Pasa AbortSignal a una operación compatible y limpia el temporizador en finally. La cancelación es cooperativa; una dependencia incompatible no se detiene por activar la señal. Define cómo observar o esperar el trabajo pendiente.
+El deadline rechaza race, pero no work. Abrir el gate controlado prueba que la operación restante termina, sin depender de tiempos. Pasa `AbortSignal` a una operación compatible y limpia el temporizador en finally. La cancelación es cooperativa; una dependencia incompatible no se detiene por activar la señal. Define cómo observar o esperar el trabajo pendiente.
 
 ## Explicar concurrencia
 

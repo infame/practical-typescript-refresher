@@ -91,6 +91,8 @@ function renderPage() {
   }
   const name = document.getElementById('domain-name');
   if (name) name.textContent = ui[domain.id];
+  const description = document.getElementById('domain-description');
+  if (description) description.textContent = ui.domainDescriptions[domain.id];
   for (const [id, text] of [
     ['domain-entity', domain.type],
     ['domain-id', domain.idField],

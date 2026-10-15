@@ -57,7 +57,7 @@
     "domainModel": "Domain vocabulary",
     "entity": "Entity",
     "metric": "Numeric field",
-    "terms": "The same type rules and algorithms apply; these terms are substituted in examples.",
+    "terms": "The domain changes example names. Validation, key scope, ordering and failure behavior come from each exercise’s contract.",
     "practiceIntro": "Three connected exercises: validate an update, keep the latest version, then save with bounded concurrency. Start with the contract and write your solution before opening the spoiler.",
     "task": "Task",
     "contract": "Contract",
@@ -98,7 +98,13 @@
       ["Data and algorithms", "Idempotency, database writes and algorithm patterns.", "7,8"],
       ["Tools and code review", "Compiler errors, modules, debugging and tests.", "13,9"],
       ["Write the code", "Work through independent tasks, then try the timed mock.", "14,10"]
-    ]
+    ],
+    "domainDescriptions": {
+      "catalog": "A supplier feed reports product-state snapshots. The numeric field is the product’s price; its units and precision follow the exercise contract.",
+      "analytics": "A source reports snapshots of a page’s view count, rather than one increment per page view. Follow the exercise’s numeric rule; real view counts would normally be integers.",
+      "jobs": "A source reports job-state snapshots, including an attempt count. Importing one does not run or retry the job. Real attempt counts would normally be integers; the exercise may use a simplified numeric rule.",
+      "profiles": "A source reports profile-state snapshots. The numeric field is an example reputation value; its allowed range and update policy come from the exercise contract."
+    }
   },
   "ru": {
     "brand": "Практический TypeScript",
@@ -158,7 +164,7 @@
     "domainModel": "Термины домена",
     "entity": "Сущность",
     "metric": "Числовое поле",
-    "terms": "Правила типов и алгоритмы одинаковы; в примеры подставляются эти термины.",
+    "terms": "Домен меняет имена в примерах. Валидацию, область ключей, порядок и поведение при ошибках определяет контракт каждого упражнения.",
     "practiceIntro": "Три связанные задачи: проверить обновление, выбрать актуальную версию и сохранить данные с ограничением конкурентности. Прочитайте контракт и напишите решение до открытия спойлера.",
     "task": "Задание",
     "contract": "Контракт",
@@ -195,7 +201,13 @@
       ["Данные и алгоритмы", "Идемпотентность, запись в базу и алгоритмические приёмы.", "7,8"],
       ["Инструменты и code review", "Ошибки компилятора, модули, отладка и тесты.", "13,9"],
       ["Написать код", "Самостоятельные задачи, затем интервью с ограничением времени.", "14,10"]
-    ]
+    ],
+    "domainDescriptions": {
+      "catalog": "Источник поставщика присылает снимки состояния товаров. Числовое поле — цена товара; единицы и точность задаёт контракт упражнения.",
+      "analytics": "Источник присылает снимки счётчика просмотров страницы, а не отдельные прибавления за каждый просмотр. Следуй числовому контракту упражнения; в реальной системе просмотры обычно считают целыми числами.",
+      "jobs": "Источник присылает снимки состояния задачи со счётчиком попыток. Импорт снимка не запускает задачу и не повторяет её. В реальной системе попытки обычно целочисленные; упражнение может использовать упрощённое числовое правило.",
+      "profiles": "Источник присылает снимки состояния профиля. Числовое поле — условная репутация; допустимый диапазон и правила обновления задаёт контракт упражнения."
+    }
   },
   "es": {
     "brand": "TypeScript práctico",
@@ -255,7 +267,7 @@
     "domainModel": "Vocabulario del dominio",
     "entity": "Entidad",
     "metric": "Campo numérico",
-    "terms": "Las reglas de tipos y algoritmos son iguales; estos términos se sustituyen en los ejemplos.",
+    "terms": "El dominio cambia los nombres de los ejemplos. Cada ejercicio define validación, ámbito de claves, orden y comportamiento ante fallos.",
     "practiceIntro": "Tres ejercicios conectados: validar una actualización, elegir la última versión y guardar con concurrencia limitada. Lee el contrato y escribe tu solución antes de abrir el spoiler.",
     "task": "Ejercicio",
     "contract": "Contrato",
@@ -304,6 +316,12 @@
         "Resuelve tareas por tu cuenta y prueba la simulación cronometrada.",
         "14,10"
       ]
-    ]
+    ],
+    "domainDescriptions": {
+      "catalog": "Una fuente de un proveedor envía instantáneas del estado de productos. El campo numérico es el precio; sus unidades y precisión dependen del contrato del ejercicio.",
+      "analytics": "Una fuente envía instantáneas del contador de visitas de una página, no un incremento por cada visita. Sigue la regla numérica del ejercicio; los contadores reales normalmente usan enteros.",
+      "jobs": "Una fuente envía instantáneas del estado de tareas con un contador de intentos. Importar una no ejecuta ni reintenta la tarea. Los contadores reales normalmente usan enteros; el ejercicio puede simplificar esa regla.",
+      "profiles": "Una fuente envía instantáneas del estado de perfiles. El campo numérico representa una reputación de ejemplo; el ejercicio define su rango permitido y su política de actualización."
+    }
   }
 }

@@ -4,7 +4,9 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## References and shallow copies
 
-const prevents rebinding a variable, not mutating its object. Spread copies one level. Changing a nested object through the copy can change the original; copying a nested array is also required when results must be independently mutable. Object.isFrozen and readonly types are separate from a deep immutability guarantee. Copy only the levels your contract owns, and test that changes to the result do not affect the input.
+`const` prevents rebinding a variable, not mutating its object. Spread copies one level. Changing a nested object through the copy can change the original; copying a nested array is also required when results must be independently mutable.
+
+`Object.isFrozen` and `readonly` types are separate from a deep immutability guarantee. Copy only the levels your contract owns, and test that changes to the result do not affect the input.
 
 ```ts
 const a = { id: "A" };
@@ -31,7 +33,11 @@ const updated = {
 
 ## Arrays and sorting
 
-sort mutates its array and defaults to string comparison. Supply (a, b) => a - b for numbers and copy first when mutation is forbidden. Modern toSorted returns a new array but needs a supporting runtime. map transforms, filter selects and reduce accumulates; choose the operation that expresses the task. An index may be absent under noUncheckedIndexedAccess even when you think the array is nonempty: check the element or model a nonempty tuple.
+`sort()` mutates its array and defaults to `string` comparison. Supply `(a, b) => a - b` for numbers and copy first when mutation is forbidden. Modern `toSorted` returns a new array but needs a supporting runtime.
+
+`map` transforms, `filter` selects and `reduce` accumulates; choose the operation that expresses the task.
+
+An index may be absent under `noUncheckedIndexedAccess` even when you think the array is nonempty: check the element or model a nonempty tuple.
 
 ```ts
 [100, 20, 3].sort();
@@ -62,7 +68,11 @@ const nextPrice = patch.price === undefined ? oldPrice : patch.price;
 
 ## Numbers and dates
 
-Number accepts coercions that a domain parser may reject: an empty string can become zero, and hexadecimal or exponent notation may be accepted. Check syntax separately if the contract requires strict decimals. Use Number.isFinite and Number.isSafeInteger as appropriate; NaN does not equal itself. Specify units, timezone and invalid-date handling rather than comparing ambiguous date strings. Floating-point arithmetic is not exact decimal money arithmetic.
+`Number` accepts coercions that a domain parser may reject: an empty `string` can become zero, and hexadecimal or exponent notation may be accepted. Check syntax separately if the contract requires strict decimals.
+
+Use `Number.isFinite` and `Number.isSafeInteger` as appropriate; `NaN` does not equal itself.
+
+Specify units, timezone and invalid-date handling rather than comparing ambiguous date strings. Floating-point arithmetic is not exact decimal money arithmetic.
 
 ```ts
 Number(" ");          // 0
@@ -92,7 +102,11 @@ const b = Date.parse("2026-10-01T09:00:00Z");      // 09:00 UTC
 a < b; // true
 ```
 
-For example, `0.1 + 0.2 !== 0.3`. If the contract uses currency with two decimal places, integer minor units in the safe range can avoid these fractional errors; other currencies and domains need their own scale. Keep IDs such as "00123" as strings. Date.parse returns milliseconds or NaN, while an API may send seconds; encode the unit in the field name. For date-time strings include an explicit timezone, normalize once, and compare timestamps rather than ISO strings with different offsets.
+For example, `0.1 + 0.2 !== 0.3`. If the contract uses currency with two decimal places, integer minor units in the safe range can avoid these fractional errors; other currencies and domains need their own scale.
+
+Keep IDs such as "00123" as strings.
+
+`Date.parse` returns milliseconds or `NaN`, while an API may send seconds; encode the unit in the field name. For date-time strings include an explicit timezone, normalize once, and compare timestamps rather than ISO strings with different offsets.
 
 ## Practice
 
@@ -113,8 +127,12 @@ const retries = 0 || 3;
 
 ### Spoiler
 
-The original `source` still has IDs A, B in that order. Its first `tags` array is now `["new"]`, because the shallow object copy shares that nested array. `result` has IDs B, X after reversal. `retries` is 3: use `0 ?? 3` to preserve an explicit zero. Clone `tags` as well as its parent when independent mutation is required. The earlier default sort produces `[100, 20, 3]` by string comparison; the numeric comparator produces `[3, 20, 100]`.
+The original `source` still has IDs A, B in that order. Its first `tags` array is now `["new"]`, because the shallow object copy shares that nested array. `result` has IDs B, X after reversal. `retries` is 3: use `0 ?? 3` to preserve an explicit zero.
+
+Clone `tags` as well as its parent when independent mutation is required.
+
+The earlier default sort produces `[100, 20, 3]` by `string` comparison; the numeric comparator produces `[3, 20, 100]`.
 
 ## Explain your checks
 
-Before each if ask whether you are testing existence, runtime type or business validity. They are separate decisions. A number can be present and correctly typed but still invalid because it is negative or nonfinite.
+Before each `if` ask whether you are testing existence, runtime type or business validity. They are separate decisions. A `number` can be present and correctly typed but still invalid because it is negative or nonfinite.

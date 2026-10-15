@@ -4,7 +4,7 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## Checking, transforming and executing
 
-These are separate operations. This repository checks with tsc --noEmit and runs supported TS syntax under Node 24 with type stripping. Running TS does not imply checking types or respecting all tsconfig transformations. Inspect scripts, engines and tsconfig first. npm ci installs the locked dependency set and detects a package/lock mismatch; npm install is for changing dependencies.
+These are separate operations. This repository checks with `tsc --noEmit` and runs supported TS syntax under Node 24 with type stripping. Running TS does not imply checking types or respecting all `tsconfig` transformations. Inspect scripts, engines and `tsconfig` first. `npm ci` installs the locked dependency set and detects a package/lock mismatch; `npm install` is for changing dependencies.
 
 ```sh
 npm ci
@@ -16,7 +16,13 @@ npm start
 
 ## Strict and additional flags
 
-strict enables a group of checks, including nullability and unknown catch values, but noUncheckedIndexedAccess and exactOptionalPropertyTypes are separate options. Indexed access may be absent; check the value or model a nonempty tuple rather than applying ! reflexively. verbatimModuleSyntax makes explicit type imports useful. A direct-Node noEmit configuration is not interchangeable with a browser bundler configuration.
+`strict` enables a group of checks, including nullability and `unknown` catch values, but `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` are separate options.
+
+Indexed access may be absent; check the value or model a nonempty tuple rather than applying `!` reflexively.
+
+`verbatimModuleSyntax` makes explicit type imports useful.
+
+A direct-Node `noEmit` configuration is not interchangeable with a browser bundler configuration.
 
 ```json
 {
@@ -36,11 +42,19 @@ strict enables a group of checks, including nullability and unknown catch values
 
 ## Target and lib do not install APIs
 
-target controls emitted language assumptions; lib describes available APIs for checking. Adding toSorted declarations does not install toSorted in an older runtime. Node declarations also do not upgrade Node. Match supported runtime, package engines, declarations and CI so the checker does not approve calls to unavailable APIs.
+`target` controls emitted language assumptions; `lib` describes available APIs for checking. Adding `toSorted` declarations does not install `toSorted` in an older runtime. Node declarations also do not upgrade Node. Match supported runtime, package engines, declarations and CI so the checker does not approve calls to unavailable APIs.
 
 ## ESM, CommonJS and type imports
 
-type: module defines Node ESM interpretation for .js; .mjs and .cjs make format explicit. module and moduleResolution must match the real loading environment. import type is erased; an interface cannot be instantiated as a runtime value. Direct TS execution uses appropriate .ts paths; compiled ESM often uses .js or an explicit extension-rewriting pipeline. paths aliases help the checker but do not teach the runtime to resolve aliases.
+`type: module` defines Node ESM interpretation for .js; .mjs and .cjs make format explicit.
+
+`module` and `moduleResolution` must match the real loading environment.
+
+`import type` is erased; an interface cannot be instantiated as a runtime value.
+
+Direct TS execution uses appropriate .ts paths; compiled ESM often uses .js or an explicit extension-rewriting pipeline.
+
+`paths` aliases help the checker but do not teach the runtime to resolve aliases.
 
 ```ts
 import { mapLimit } from "./core.ts";
@@ -49,7 +63,7 @@ import type { Repository } from "./core.ts";
 
 ## Declarations describe existing implementations
 
-.d.ts and declare describe values implemented elsewhere; they do not create the values. Check package exports, installation, declarations and module resolution when an import fails. declare module "*" with any hides API mistakes instead of fixing the missing module.
+`.d.ts` and `declare` describe values implemented elsewhere; they do not create the values. Check package exports, installation, declarations and module resolution when an import fails. `declare module "*"` with `any` hides API mistakes instead of fixing the missing module.
 
 ```ts check
 declare const API_URL: string;
@@ -58,7 +72,7 @@ declare const API_URL: string;
 
 ## Environment variables are input
 
-Environment values are strings or undefined. Parse syntax, convert, check range and fail at startup for invalid required configuration. An assertion to number cannot convert a string. For a port require digits and the 1–65535 range; keep defaulting distinct from accepting empty or malformed input.
+Environment values are strings or `undefined`. Parse syntax, convert, check range and fail at startup for invalid required configuration. An assertion to `number` cannot convert a `string`. For a port require digits and the 1–65535 range; keep defaulting distinct from accepting empty or malformed input.
 
 ```ts
 function readPort(value: string | undefined): number {
@@ -74,19 +88,19 @@ function readPort(value: string | undefined): number {
 
 ## Read compiler errors
 
-Find where a literal widened, an optional field may be absent, a callback became too narrow or JSON was asserted safe. A runtime module-not-found has another cause: inspect the file, path, extension and module format. Adding any does not fix a missing file.
+Find where a literal widened, an optional field may be absent, a callback became too narrow or JSON was asserted safe. A runtime module-not-found has another cause: inspect the file, path, extension and module format. Adding `any` does not fix a missing file.
 
 ## Practice
 
-A Repository interface is imported as a runtime constructor; a paths alias checks but fails in Node; a file runs despite a wrong argument type. What will you inspect?
+A `Repository` interface is imported as a runtime constructor; a paths alias checks but fails in Node; a file runs despite a wrong argument type. What will you inspect?
 
 ### Spoiler
 
-Use import type for the interface and an actual implementation for construction. Provide a runtime resolver or use a supported relative import for the alias. Run a separate typecheck and validate external data for the third case; type stripping is not checking.
+Use `import type` for the interface and an actual implementation for construction. Provide a runtime resolver or use a supported relative import for the alias. Run a separate typecheck and validate external data for the third case; type stripping is not checking.
 
 ## A reliable working loop
 
-Read scripts, engines and tsconfig; install from the lockfile; run the checker and one test; write the task; repeat relevant checks. Resolve setup problems before a timed interview, not during the first implementation.
+Read scripts, engines and `tsconfig`; install from the lockfile; run the checker and one test; write the task; repeat relevant checks. Resolve setup problems before a timed interview, not during the first implementation.
 
 ## Official references
 
@@ -95,13 +109,17 @@ Read scripts, engines and tsconfig; install from the lockfile; run the checker a
 
 ## Compiler-error clinic: ten repairs
 
-Read the diagnostic, trace the value back to its declaration, and try a repair before expanding the answer. Each failing and corrected block is checked independently with this repository's strict settings. The @ts-expect-error comments mark intentional failures; remove them in a scratch file to see the diagnostic. These are type-checking examples, not scripts to run unchanged: the failing lines still execute if you run them.
+Read the diagnostic, trace the value back to its declaration, and try a repair before expanding the answer. Each failing and corrected block is checked independently with this repository's `strict` settings.
+
+The `@ts-expect-error` comments mark intentional failures; remove them in a scratch file to see the diagnostic.
+
+These are type-checking examples, not scripts to run unchanged: the failing lines still execute if you run them.
 
 References: [narrowing](https://www.typescriptlang.org/docs/handbook/2/narrowing.html), [generic key/value relationships](https://www.typescriptlang.org/docs/handbook/2/generics.html), [overloads](https://www.typescriptlang.org/docs/handbook/2/functions.html), [exact optional properties](https://www.typescriptlang.org/tsconfig/exactOptionalPropertyTypes.html).
 
 ### 1. A mutable field widened to string
 
-This fails with an argument-type error even though the object binding is const. Find which value became too broad.
+This fails with an argument-type error even though the object binding is `const`. Find which value became too broad.
 
 ```ts check
 type Status = "queued" | "done";
@@ -113,7 +131,7 @@ accept(job.status);
 
 ### Spoiler
 
-const protects the binding, not the mutable property. The property is inferred as string. State the domain contract at construction; then legal transitions remain possible. as const is useful for a fixed configuration, but would make this property readonly. Check that a valid transition works and an unrelated string is rejected.
+`const` protects the binding, not the mutable property. The property is inferred as `string`. State the domain contract at construction; then legal transitions remain possible. `as const` is useful for a fixed configuration, but would make this property `readonly`. Check that a valid transition works and an unrelated `string` is rejected.
 
 ```ts check
 type Status = "queued" | "done";
@@ -125,7 +143,7 @@ job.status = "running";
 
 ### 2. An optional property may be absent
 
-The checker cannot promise a string for every caller. Fix the input contract or handle absence.
+The checker cannot promise a `string` for every caller. Fix the input contract or handle absence.
 
 ```ts check
 function token(options: { token?: string }): string {
@@ -149,7 +167,7 @@ token({ token: " abc " }); // "abc"; token({}) rejects.
 
 ### 3. An array index is not a nonempty guarantee
 
-With noUncheckedIndexedAccess, even index zero can be absent.
+With `noUncheckedIndexedAccess`, even index zero can be absent.
 
 ```ts check
 function firstId(items: readonly { id: string }[]): string {
@@ -160,7 +178,7 @@ function firstId(items: readonly { id: string }[]): string {
 
 ### Spoiler
 
-Decide what empty input means. This API returns undefined, so its result type must include that possibility. If emptiness is forbidden, validate and throw, or accept a nonempty tuple. Neither a type assertion nor an earlier informal assumption changes an external array.
+Decide what empty input means. This API returns `undefined`, so its result type must include that possibility. If emptiness is forbidden, validate and throw, or accept a nonempty tuple. Neither a type assertion nor an earlier informal assumption changes an external array.
 
 ```ts check
 function firstId(items: readonly { id: string }[]): string | undefined {
@@ -173,7 +191,7 @@ firstId([{ id: "A" }]); // "A"
 
 ### 4. Absent is different from explicitly undefined
 
-exactOptionalPropertyTypes rejects this assignment; reading the property may still yield undefined.
+`exactOptionalPropertyTypes` rejects this assignment; reading the property may still yield `undefined`.
 
 ```ts check
 type Patch = { name?: string };
@@ -183,7 +201,7 @@ const patch: Patch = { name: undefined };
 
 ### Spoiler
 
-Omit the property to express no update. Include undefined in the value union only if a present undefined is part of the intended contract. Object.hasOwn distinguishes the two objects at runtime; JSON serialization of an object usually drops undefined properties, so transport semantics need their own design.
+Omit the property to express no update. Include `undefined` in the value union only if a present `undefined` is part of the intended contract. `Object.hasOwn` distinguishes the two objects at runtime; JSON serialization of an object usually drops `undefined` properties, so transport semantics need their own design.
 
 ```ts check
 type Patch = { name?: string };
@@ -207,7 +225,7 @@ const age: number = field(person, "age");
 
 ### Spoiler
 
-Give the selected key its own parameter K extends keyof T, then return T[K]. A return assertion at the call site would hide the missing relationship and can become wrong when the selected key changes. Test both a number property and a string property; an absent key must fail.
+Give the selected key its own parameter `K extends keyof T`, then return `T[K]`. A return assertion at the call site would hide the missing relationship and can become wrong when the selected key changes. Test both a `number` property and a `string` property; an absent key must fail.
 
 ```ts check
 function field<T, K extends keyof T>(value: T, key: K): T[K] { return value[key]; }
@@ -263,7 +281,7 @@ function addTag(tags: readonly string[], next: string): string[] {
 
 ### Spoiler
 
-Return a new array. This protects the caller through this API, but does not freeze the original object. Readonly<{tags: string[]}> is shallower: it prevents replacing tags, while tags.push still compiles. For an immutable view of both levels, write a readonly property whose array is readonly too.
+Return a new array. This protects the caller through this API, but does not freeze the original object. `Readonly<{tags: string[]}>` is shallower: it prevents replacing tags, while tags.push still compiles. For an immutable view of both levels, write a `readonly` property whose array is `readonly` too.
 
 ```ts check
 function addTag(tags: readonly string[], next: string): string[] { return [...tags, next]; }
@@ -277,7 +295,7 @@ state.tags.push("other");
 
 ### 8. An exhaustive switch missed a variant
 
-Assigning the remaining value to never reveals the unhandled member.
+Assigning the remaining value to `never` reveals the unhandled member.
 
 ```ts check
 type Result = { kind: "ok"; value: number } | { kind: "failed"; message: string };
@@ -294,7 +312,7 @@ function describe(result: Result): string {
 
 ### Spoiler
 
-Handle every member before the never check. Adding a later variant should cause a new compile error here. A fallback returning an empty string would silently accept the new case. This guarantee applies to the declared union; external JSON still needs validation.
+Handle every member before the `never` check. Adding a later variant should cause a new compile error here. A fallback returning an empty `string` would silently accept the new case. This guarantee applies to the declared union; external JSON still needs validation.
 
 ```ts check
 type Result = { kind: "ok"; value: number } | { kind: "failed"; message: string };
@@ -325,7 +343,7 @@ function message(run: () => void): string {
 
 ### Spoiler
 
-Narrow to Error before reading its message. For ordinary other values use a documented fallback; String(undefined) is "undefined", not an empty message. Exotic objects can fail during conversion too, so a logging boundary that must never throw needs an additional fallback policy. Do not classify every failure as retryable just because it has a message.
+Narrow to `Error` before reading its message. For ordinary other values use a documented fallback; `String(undefined)` is `"undefined"`, not an empty message. Exotic objects can fail during conversion too, so a logging boundary that must never throw needs an additional fallback policy. Do not classify every failure as retryable just because it has a message.
 
 ```ts check
 function errorMessage(error: unknown): string {

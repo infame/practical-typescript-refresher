@@ -4,7 +4,13 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## Unknown, any and narrowing
 
-any disables useful checks. unknown can hold anything but requires evidence before use. Validate external input at the boundary: exclude null and arrays, check required fields, check their types and business constraints, then return a normalized object. typeof null is object. An as assertion neither checks nor converts data. JSON.parse can fail on syntax before schema validation even starts. A parser is useful for normalization and error messages; a type guard is useful for branching, but its implementation is a promise the compiler trusts.
+`any` disables useful checks. `unknown` can hold anything but requires evidence before use.
+
+Validate external input at the boundary: exclude `null` and arrays, check required fields, check their types and business constraints, then return a normalized object.
+
+`typeof null` is `"object"`. An `as` assertion neither checks nor converts data. `JSON.parse` can fail on syntax before schema validation even starts.
+
+A parser is useful for normalization and error messages; a type guard is useful for branching, but its implementation is a promise the compiler trusts.
 
 ```ts check
 type Listing = { id: string; price: number };
@@ -26,7 +32,11 @@ function parseListing(value: unknown): Listing {
 
 ## Discriminated unions
 
-A boolean success flag with optional data and error permits impossible combinations. Instead make each allowed state a union member with a literal discriminator and required payload. Checking the discriminator narrows to the correct member. never represents an exhausted set of possibilities and supports a compile-time exhaustiveness check. It does not validate an external payload. Return expected per-record failures as values when a batch should continue; throw when the enclosing operation cannot proceed.
+A `boolean` success flag with optional data and error permits impossible combinations. Instead make each allowed state a union member with a literal discriminator and required payload. Checking the discriminator narrows to the correct member.
+
+`never` represents an exhausted set of possibilities and supports a compile-time exhaustiveness check. It does not validate an external payload.
+
+Return expected per-record failures as values when a batch should continue; throw when the enclosing operation cannot proceed.
 
 ```ts
 type WeakResult<T> = {
@@ -69,7 +79,9 @@ function summarize(event: ListingEvent): string {
 
 ## Generics preserve relationships
 
-T links element input to output, K links the selected key to the Map key. Usually inference supplies both. any loses the relationship and returning unknown loses information already known to the caller. K extends keyof T restricts a key to the object type; T[K] recovers its value type. This extends is a type constraint, not runtime inheritance. Add a generic parameter only when it connects meaningful positions in the API.
+`T` links element input to output, `K` links the selected key to the `Map` key. Usually inference supplies both. `any` loses the relationship and returning `unknown` loses information already known to the caller.
+
+`K extends keyof T` restricts a key to the object type; `T[K]` recovers its value type. This `extends` is a type constraint, not runtime inheritance. Add a generic parameter only when it connects meaningful positions in the API.
 
 ```ts check
 function groupBy<T, K>(
@@ -102,7 +114,17 @@ const price = getField({ id: "A", price: 500 }, "price"); // number
 
 ## Utility types and API boundaries
 
-Pick selects properties, Omit removes them, Partial makes them optional and Readonly prevents assignment through that type. None removes runtime fields or deeply freezes an object. Restrict a patch to editable fields instead of Partial of an entire entity. Record with a finite key union is useful; sparse string dictionaries need absent-value handling. type can describe unions and tuples; interface describes extensible object contracts. as const preserves literal information; satisfies checks compatibility without runtime validation. Catch values are unknown: narrow Error or stringify the alternative.
+`Pick` selects properties, `Omit` removes them, `Partial` makes them optional and `Readonly` prevents assignment through that type.
+
+None removes runtime fields or deeply freezes an object. Restrict a patch to editable fields instead of `Partial` of an entire entity.
+
+`Record` with a finite key union is useful; sparse `string` dictionaries need absent-value handling.
+
+`type` can describe unions and tuples; `interface` describes extensible object contracts.
+
+`as const` preserves literal information; `satisfies` checks compatibility without runtime validation.
+
+Catch values are `unknown`: narrow `Error` or stringify the alternative.
 
 ```ts check
 type Listing = { id: string; price: number; source: string };
@@ -147,11 +169,13 @@ const item = raw as Item;
 const total = item.price + 1; // runtime: "free1", not a number.
 ```
 
-This code typechecks, yet its result violates the numeric contract. as changes the checker's view and leaves the string untouched. Narrow object shape, reject null/arrays and check each required field before constructing a fresh Item. Testing only valid JSON misses this bug: include strings, missing fields, zero and nonfinite numbers.
+This code typechecks, yet its result violates the numeric contract. `as` changes the checker's view and leaves the `string` untouched. Narrow object shape, reject `null`/arrays and check each required field before constructing a fresh Item.
+
+Testing only valid JSON misses this bug: include strings, missing fields, zero and nonfinite numbers.
 
 ## Explain the boundary
 
-State where validation happens and which errors are expected. The useful guarantee is that callers receive a validated value or an explicit failure, not that assertions make unknown data safe.
+State where validation happens and which errors are expected. The useful guarantee is that callers receive a validated value or an explicit failure, not that assertions make `unknown` data safe.
 
 ## Official references
 

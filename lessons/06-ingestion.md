@@ -4,7 +4,11 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## HTTP failure is not necessarily rejection
 
-fetch can resolve normally for 404, 429 or 500. Check response.ok or status, then parse the body and validate it as a separate step. A timeout must cancel or otherwise bound the operation; Promise.race alone only stops waiting and leaves the losing work running. Pass an AbortSignal to supported operations and clean up timers in finally. The examples are patterns, not a universal production retry policy.
+fetch can resolve normally for 404, 429 or 500. Check `response.ok` or status, then parse the body and validate it as a separate step.
+
+A timeout must cancel or otherwise bound the operation; `Promise.race` alone only stops waiting and leaves the losing work running.
+
+Pass an `AbortSignal` to supported operations and clean up timers in finally. The examples are patterns, not a universal production retry policy.
 
 ```ts
 async function fetchJson(url: string, timeoutMs: number): Promise<unknown> {
@@ -29,7 +33,11 @@ async function fetchJson(url: string, timeoutMs: number): Promise<unknown> {
 
 ## Which failures to retry
 
-Retry only failures that the operation contract treats as transient and safe. Typical candidates include selected network failures, 429 and selected 5xx responses; validation errors and most 4xx responses usually need a changed request. Use bounded attempts, a total time budget, exponential backoff and jitter; consider Retry-After. A retry can duplicate a write whose response was lost, so idempotency belongs in the design. Avoid multiplying retries across layers.
+Retry only failures that the operation contract treats as transient and safe. Typical candidates include selected network failures, 429 and selected 5xx responses; validation errors and most 4xx responses usually need a changed request.
+
+Use bounded attempts, a total time budget, exponential backoff and jitter; consider Retry-After.
+
+A retry can duplicate a write whose response was lost, so idempotency belongs in the design. Avoid multiplying retries across layers.
 
 ```ts
 const sleep = (ms: number) =>
@@ -58,7 +66,11 @@ async function retry<T>(
 
 ## Cursor pagination
 
-Read a page, process it, then advance to its next cursor. Detect repeated cursors instead of looping forever. Cursor semantics and snapshot consistency come from the API; deduplication cannot recover records never delivered. Decide whether individual page failures stop the import, retry that page or produce a resumable report. Do not advance the checkpoint before the page has been durably processed.
+Read a page, process it, then advance to its next cursor. Detect repeated cursors instead of looping forever.
+
+Cursor semantics and snapshot consistency come from the API; deduplication cannot recover records never delivered.
+
+Decide whether individual page failures stop the import, retry that page or produce a resumable report. Do not advance the checkpoint before the page has been durably processed.
 
 ```ts
 type Page<T> = { items: T[]; nextCursor: string | null };
@@ -87,7 +99,11 @@ for await (const batch of pages(loadPage)) {
 
 ## Checkpoint and backpressure
 
-Limit processing per page and persist the cursor after successful processing. This bounds memory without retaining the entire dataset. In a stream, consumers must slow producers or buffer only within a declared bound. A checkpoint should correspond to completed durable effects, not merely received data. Recovery must tolerate replay of already-completed work.
+Limit processing per page and persist the cursor after successful processing. This bounds memory without retaining the entire dataset.
+
+In a stream, consumers must slow producers or buffer only within a declared bound.
+
+A checkpoint should correspond to completed durable effects, not merely received data. Recovery must tolerate replay of already-completed work.
 
 ## Practice
 

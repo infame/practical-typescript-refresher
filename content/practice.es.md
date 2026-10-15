@@ -2,11 +2,13 @@
 
 ## 1. Validar una actualización
 
-Implementa `parseEntity(value: unknown): EntityUpdate`. Lanza un `Error` si la entrada no es válida; no devuelvas null ni undefined en ese caso. Exige sourceId, eventId y entityId propios, strings no vacíos tras trim; version entero seguro no negativo y metric número finito no negativo. Rechaza null, arrays, números como strings y campos ausentes. Devuelve objeto nuevo e ignora campos extra. La métrica es un contrato simplificado, no una regla universal de ese negocio.
+Implementa `parseEntity(value: unknown): EntityUpdate`. Lanza un `Error` si la entrada no es válida; no devuelvas `null` ni `undefined` en ese caso. Exige `sourceId`, `eventId` y `entityId` propios, strings no vacíos tras trim; version entero seguro no negativo y metric número finito no negativo. Rechaza `null`, arrays, números como strings y campos ausentes.
+
+Devuelve objeto nuevo e ignora campos extra. La métrica es un contrato simplificado, no una regla universal de ese negocio.
 
 ### Spoiler
 
-Excluye null y arrays y comprueba tipo y condición de cada campo. Si otro contrato acepta strings, valida sintaxis antes de convertir. La assertion Record local solo se aplica a un objeto comprobado: cada valor sigue validándose en runtime. No afirma que toda la entrada sea válida.
+Excluye `null` y arrays y comprueba tipo y condición de cada campo. Si otro contrato acepta strings, valida sintaxis antes de convertir. La assertion `Record` local solo se aplica a un objeto comprobado: cada valor sigue validándose en runtime. No afirma que toda la entrada sea válida.
 
 ```ts
 export type EntityUpdate = {
@@ -52,11 +54,11 @@ export function parseEntity(value: unknown): EntityUpdate {
 
 ## 2. Deduplicar y elegir versión
 
-La entrada ya es válida. eventId es único dentro de sourceId y replay inmutable cuenta una vez. Elige máxima version por sourceId/entityId, primera en empate y orden de primera aparición. No modifiques entrada. Prueba dos fuentes con mismo ID, versiones inversas, duplicados y separadores dentro de IDs.
+La entrada ya es válida. `eventId` es único dentro de `sourceId` y replay inmutable cuenta una vez. Elige máxima version por `sourceId`/`entityId`, primera en empate y orden de primera aparición. No modifiques entrada. Prueba dos fuentes con mismo ID, versiones inversas, duplicados y separadores dentro de IDs.
 
 ### Spoiler
 
-Usa dos claves independientes: Set para entregas y Map para ganadores. Una pareja JSON evita colisiones de separadores. Cambia solo ante versión mayor; Map conserva posición. Es deduplicación del batch, no inbox duradero, y retiene O(eventos + entidades) claves.
+Usa dos claves independientes: `Set` para entregas y `Map` para ganadores. Una pareja JSON evita colisiones de separadores. Cambia solo ante versión mayor; `Map` conserva posición. Es deduplicación del batch, no inbox duradero, y retiene `O(eventos + entidades)` claves.
 
 ```ts
 export type EntityUpdate = {
@@ -83,11 +85,11 @@ export function latestEntities(input: readonly EntityUpdate[]): EntityUpdate[] {
 
 ## 3. Procesar con fallos parciales
 
-Acepta entidades válidas, limit entero seguro positivo y save(entity): Promise<void>. Limita operaciones activas, conserva orden y continúa tras fallo individual devolviendo unión ok por entidad. Límite inválido rechaza incluso vacío. Throw síncrono y throw undefined también son fallos.
+Acepta entidades válidas, limit entero seguro positivo y `save(entity)`: `Promise<void>`. Limita operaciones activas, conserva orden y continúa tras fallo individual devolviendo unión ok por entidad. Límite inválido rechaza incluso vacío. Throw síncrono y `throw undefined` también son fallos.
 
 ### Spoiler
 
-Captura dentro del callback limiter y devuelve errores esperados como valores. Espera save antes de éxito y comprueba Error. mapLimit se importa del capítulo 5 y examples/core.ts. Anota unión para conservar discriminadores literales.
+Captura dentro del callback limiter y devuelve errores esperados como valores. Espera save antes de éxito y comprueba `Error`. `mapLimit` se importa del capítulo 5 y `examples/core.ts`. Anota unión para conservar discriminadores literales.
 
 ```ts
 import { mapLimit } from './core.ts';
@@ -118,4 +120,4 @@ export async function processEntities(
 
 ## Comprobar tu intento
 
-Prueba cero, campos ausentes, duplicados, versiones iguales y antiguas, ámbitos, finalización inversa, throw síncrono y límite inválido. Ejecuta npm run check y npm test. Cambia la política de fallo o añade un campo y repite sin respuesta.
+Prueba cero, campos ausentes, duplicados, versiones iguales y antiguas, ámbitos, finalización inversa, throw síncrono y límite inválido. Ejecuta `npm run check` y `npm test`. Cambia la política de fallo o añade un campo y repite sin respuesta.

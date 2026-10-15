@@ -4,7 +4,7 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Un fallo HTTP no siempre rechaza
 
-fetch puede resolver para 404, 429 o 500. Comprueba status u ok; luego analiza el cuerpo y valida su estructura. Promise.race deja de esperar pero no cancela la operación perdedora. Usa AbortSignal cuando la operación lo soporte y limpia timers en finally. Los ejemplos explican patrones, no una política universal de producción.
+fetch puede resolver para 404, 429 o 500. Comprueba status u ok; luego analiza el cuerpo y valida su estructura. `Promise.race` deja de esperar pero no cancela la operación perdedora. Usa `AbortSignal` cuando la operación lo soporte y limpia timers en finally. Los ejemplos explican patrones, no una política universal de producción.
 
 ```ts
 async function fetchJson(url: string, timeoutMs: number): Promise<unknown> {

@@ -4,7 +4,7 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Hash map: Two Sum
 
-Guarda valores vistos y sus índices. Busca el complemento antes de insertar la posición actual para no usar dos veces el mismo elemento. Aclara si necesitas una respuesta o todas y cómo tratar duplicados. Las búsquedas esperadas O(n) sustituyen el doble bucle a cambio de memoria O(n).
+Guarda valores vistos y sus índices. Busca el complemento antes de insertar la posición actual para no usar dos veces el mismo elemento. Aclara si necesitas una respuesta o todas y cómo tratar duplicados. Las búsquedas esperadas `O(n)` sustituyen el doble bucle a cambio de memoria `O(n)`.
 
 ```ts
 function twoSum(nums: readonly number[], target: number): [number, number] | null {
@@ -77,7 +77,7 @@ function balanced(text: string): boolean {
 
 ## Combinar intervalos
 
-Ordena una copia por inicio y combina según la política de extremos. Extiende el final con max: asignar directamente el siguiente final falla con intervalos anidados. Aclara si los intervalos que se tocan se unen y si los extremos son inclusivos. El coste es O(n log n) por ordenar.
+Ordena una copia por inicio y combina según la política de extremos. Extiende el final con max: asignar directamente el siguiente final falla con intervalos anidados. Aclara si los intervalos que se tocan se unen y si los extremos son inclusivos. El coste es `O(n log n)` por ordenar.
 
 ```ts
 function mergeIntervals(input: readonly (readonly [number, number])[]): [number, number][] {
@@ -114,7 +114,7 @@ function lowerBound(values: readonly number[], target: number): number {
 
 ## BFS, DFS y heaps
 
-BFS explora niveles y encuentra caminos mínimos en grafos sin pesos. DFS sirve para alcance y ciclos. Marca visitados al encolar y usa un índice de cabeza en lugar de shift. Un heap extrae prioridad en O(log n), pero no mantiene un array completamente ordenado. Esta introducción no sustituye una preparación avanzada de programación dinámica.
+BFS explora niveles y encuentra caminos mínimos en grafos sin pesos. DFS sirve para alcance y ciclos. Marca visitados al encolar y usa un índice de cabeza en lugar de shift. Un heap extrae prioridad en `O(log n)`, pero no mantiene un array completamente ordenado. Esta introducción no sustituye una preparación avanzada de programación dinámica.
 
 ## Práctica
 

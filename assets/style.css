@@ -655,6 +655,8 @@ legend {
 }
 .domain-vocabulary small {
   color: var(--muted);
+  display: block;
+  line-height: 1.6;
 }
 .section-nav {
   margin: 20px 0;

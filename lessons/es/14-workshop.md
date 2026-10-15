@@ -4,11 +4,15 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Parser de entrada externa
 
-Implementa parseRecord(unknown) con ID string normalizado y métrica number | null. Admite número finito no negativo, null o decimal string estricto con trim. Rechaza boolean, vacío, hex, exponentes e Infinity. Devuelve objeto nuevo e ignora campos adicionales. Define gramática antes de Number; el ejemplo exige dígitos y una fracción opcional no vacía.
+Implementa `parseRecord(unknown)` con ID `string` normalizado y métrica `number | null`. Admite número finito no negativo, `null` o decimal `string` estricto con trim. Rechaza `boolean`, vacío, hex, exponentes e `Infinity`.
+
+Devuelve objeto nuevo e ignora campos adicionales.
+
+Define gramática antes de `Number`; el ejemplo exige dígitos y una fracción opcional no vacía.
 
 ### Spoiler
 
-Comprueba objeto, ID y contenido normalizado. Trata null aparte, verifica sintaxis decimal completa y luego finitud y signo. Prueba cero, espacios, .5 frente a 0.5 y coerciones peligrosas. Implementaciones en examples/workshop.ts.
+Comprueba objeto, ID y contenido normalizado. Trata `null` aparte, verifica sintaxis decimal completa y luego finitud y signo. Prueba cero, espacios, .5 frente a 0.5 y coerciones peligrosas. Implementaciones en `examples/workshop.ts`.
 
 ```ts
 export function parsePriceRecord(raw: unknown): { id: string; price: number } {
@@ -34,11 +38,11 @@ export function parsePriceRecord(raw: unknown): { id: string; price: number } {
 
 ## PATCH sin mutación
 
-Campos ausentes conservan valores; null limpia la métrica nullable; cero es válido y tags vacío limpia tags. Devuelve objeto y array nuevos incluso sin cambios. El contrato prohíbe undefined explícito.
+Campos ausentes conservan valores; `null` limpia la métrica nullable; cero es válido y tags vacío limpia tags. Devuelve objeto y array nuevos incluso sin cambios. El contrato prohíbe `undefined` explícito.
 
 ### Spoiler
 
-Elige métrica mediante comprobación de undefined, no ??, porque null tiene significado. Copia tags seleccionado. Spread superficial comparte referencias. Prueba cambiar resultado y array del patch después de llamar.
+Elige métrica mediante comprobación de `undefined`, no `??`, porque `null` tiene significado. Copia tags seleccionado. Spread superficial comparte referencias. Prueba cambiar resultado y array del patch después de llamar.
 
 ```ts
 export type Current = { id: string; price: number | null; tags: readonly string[] };
@@ -63,15 +67,23 @@ wrong.tags.push("new");
 // wrong.price is 10, not null; current.tags is now ["old", "new"].
 ```
 
-null borra price, así que ?? convierte incorrectamente un borrado en ausencia de cambio. Comprueba undefined para price. Spread crea un objeto nuevo, pero comparte tags: copia el array seleccionado incluso sin cambios. Comprueba null y modifica los tags devueltos para verificar independencia. Cero, ausencia y un array de reemplazo vacío cubren ramas distintas.
+`null` borra price, así que `??` convierte incorrectamente un borrado en ausencia de cambio. Comprueba `undefined` para price.
+
+Spread crea un objeto nuevo, pero comparte tags: copia el array seleccionado incluso sin cambios.
+
+Comprueba `null` y modifica los tags devueltos para verificar independencia.
+
+Cero, ausencia y un array de reemplazo vacío cubren ramas distintas.
 
 ## Caché async y callers concurrentes
 
-Coalesce cargas pendientes por clave y conserva éxitos, también undefined. Elimina cargas fallidas para permitir retry; throw síncrono se convierte en promise rechazada. Define identidad e invalidación aparte: este ejemplo no tiene TTL ni capacidad máxima.
+Coalesce cargas pendientes por clave y conserva éxitos, también `undefined`. Elimina cargas fallidas para permitir retry; throw síncrono se convierte en promise rechazada. Define identidad e invalidación aparte: este ejemplo no tiene TTL ni capacidad máxima.
 
 ### Spoiler
 
-Guarda la promise antes de otra llamada. Promise.resolve().then ejecuta loader después de insertar y captura throw síncrono. Borra al rechazar. Distingue ausencia de una entrada y éxito undefined; no caches rechazos para siempre.
+Guarda la promise antes de otra llamada. `Promise.resolve()`.then ejecuta loader después de insertar y captura throw síncrono. Borra al rechazar.
+
+Distingue ausencia de una entrada y éxito `undefined`; no caches rechazos para siempre.
 
 ```ts
 export function memoizeAsync<K, V>(
@@ -100,7 +112,7 @@ Carga IDs con límite, conserva posiciones y devuelve una unión por ID. Contin�
 
 ### Spoiler
 
-Captura dentro del callback mapLimit, devuelve failure discriminado y normaliza el mensaje con Error o String(error). Anota el tipo de resultado si inferencia amplía el discriminador.
+Captura dentro del callback `mapLimit`, devuelve failure discriminado y normaliza el mensaje con `Error` o `String(error)`. Anota el tipo de resultado si inferencia amplía el discriminador.
 
 ```ts
 import { mapLimit } from "./core.ts";

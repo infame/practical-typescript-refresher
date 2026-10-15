@@ -149,7 +149,7 @@ for (const lang of ['en', 'ru', 'es']) {
     return `<nav class="pager" aria-label="${ui.navigation}"><a data-prev href="${prev?.href || 'index.html'}"><span>‹ ${ui.prev}</span><small>${escape(prev?.title || ui.home)}</small></a><span class="page-count">${index + 1} / ${lessons.length}</span><a data-next href="${next?.href || 'practice.html'}"><span>${ui.next} ›</span><small>${escape(next?.title || ui.practice)}</small></a></nav>`;
   }
   function vocabulary() {
-    return `<section class="domain-vocabulary"><strong>${ui.domainModel}: <span id="domain-name">${ui.catalog}</span></strong><p>${ui.entity}: <code id="domain-entity">Product</code> · ID: <code id="domain-id">productId</code> · ${ui.metric}: <code id="domain-metric">price</code></p><small>${ui.terms}</small></section>`;
+    return `<section class="domain-vocabulary"><strong>${ui.domainModel}: <span id="domain-name">${ui.catalog}</span></strong><p id="domain-description">${escape(ui.domainDescriptions.catalog)}</p><p>${ui.entity}: <code id="domain-entity">Product</code> · ID: <code id="domain-id">productId</code> · ${ui.metric}: <code id="domain-metric">price</code></p><small>${ui.terms}</small></section>`;
   }
   function toc(rendered) {
     return `<nav class="section-nav" aria-label="${ui.inChapter}"><strong>${ui.inChapter}</strong>${rendered.toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>`;

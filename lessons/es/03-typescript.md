@@ -4,7 +4,13 @@ Repaso práctico. Lee el contrato, traza los ejemplos e intenta el ejercicio ant
 
 ## Unknown, any y narrowing
 
-any desactiva comprobaciones importantes. unknown admite cualquier valor, pero exige verificarlo antes de usarlo. En la frontera comprueba objeto, null, arrays, campos obligatorios, tipos y restricciones; después construye un resultado normalizado. typeof null es object. as no valida ni convierte. JSON.parse puede fallar antes de comprobar la estructura. Un parser normaliza y explica errores; el compilador confía en la promesa de un type guard, no demuestra su implementación.
+`any` desactiva comprobaciones importantes. `unknown` admite cualquier valor, pero exige verificarlo antes de usarlo.
+
+En la frontera comprueba objeto, `null`, arrays, campos obligatorios, tipos y restricciones; después construye un resultado normalizado.
+
+`typeof null` es `"object"`. `as` no valida ni convierte. `JSON.parse` puede fallar antes de comprobar la estructura.
+
+Un parser normaliza y explica errores; el compilador confía en la promesa de un type guard, no demuestra su implementación.
 
 ```ts check
 type Listing = { id: string; price: number };
@@ -26,7 +32,7 @@ function parseListing(value: unknown): Listing {
 
 ## Uniones discriminadas
 
-Un booleano de éxito con data y error opcionales permite estados imposibles. Define cada estado como un miembro con discriminador literal y datos obligatorios. La comprobación del discriminador permite narrowing. never sirve para comprobar exhaustividad cuando no quedan variantes, pero no valida datos externos. Devuelve errores esperados como valores si el lote debe continuar; lanza si la operación no puede seguir.
+Un booleano de éxito con data y error opcionales permite estados imposibles. Define cada estado como un miembro con discriminador literal y datos obligatorios. La comprobación del discriminador permite narrowing. `never` sirve para comprobar exhaustividad cuando no quedan variantes, pero no valida datos externos. Devuelve errores esperados como valores si el lote debe continuar; lanza si la operación no puede seguir.
 
 ```ts
 type WeakResult<T> = {
@@ -69,7 +75,7 @@ function summarize(event: ListingEvent): string {
 
 ## Generics conservan relaciones
 
-T relaciona elementos de entrada y salida; K relaciona la clave seleccionada y la del Map. Normalmente se infieren. any pierde la relación y unknown obliga a volver a comprobar datos conocidos. K extends keyof T restringe las claves; T[K] obtiene el tipo del campo. Este extends es una restricción de tipos, no herencia en ejecución.
+T relaciona elementos de entrada y salida; K relaciona la clave seleccionada y la del `Map`. Normalmente se infieren. `any` pierde la relación y `unknown` obliga a volver a comprobar datos conocidos. `K extends keyof T` restringe las claves; `T[K]` obtiene el tipo del campo. Este extends es una restricción de tipos, no herencia en ejecución.
 
 ```ts check
 function groupBy<T, K>(
@@ -102,7 +108,17 @@ const price = getField({ id: "A", price: 500 }, "price"); // number
 
 ## Utility types y fronteras
 
-Pick selecciona campos, Omit los excluye, Partial los hace opcionales y Readonly impide asignarlos mediante ese tipo. No eliminan campos reales ni congelan objetos profundamente. Limita PATCH a campos editables. Un Record de claves finitas es útil; un índice disperso necesita gestionar ausencias. type permite uniones y tuplas; interface describe objetos extensibles. as const y satisfies no validan en ejecución. En catch, comprueba Error o convierte el valor alternativo a texto.
+`Pick` selecciona campos, `Omit` los excluye, `Partial` los hace opcionales y `Readonly` impide asignarlos mediante ese tipo.
+
+No eliminan campos reales ni congelan objetos profundamente. Limita PATCH a campos editables.
+
+Un `Record` de claves finitas es útil; un índice disperso necesita gestionar ausencias.
+
+`type` permite uniones y tuplas; `interface` describe objetos extensibles.
+
+`as const` y `satisfies` no validan en ejecución.
+
+En catch, comprueba `Error` o convierte el valor alternativo a texto.
 
 ```ts check
 type Listing = { id: string; price: number; source: string };
@@ -147,7 +163,7 @@ const item = raw as Item;
 const total = item.price + 1; // runtime: "free1", not a number.
 ```
 
-El código pasa typecheck, pero el resultado viola el contrato numérico. as cambia la visión del compilador sin convertir la cadena. Comprueba objeto, null/arrays y cada campo antes de construir un Item nuevo. Incluye cadenas, campos ausentes, cero y números no finitos en las pruebas.
+El código pasa typecheck, pero el resultado viola el contrato numérico. as cambia la visión del compilador sin convertir la cadena. Comprueba objeto, `null`/arrays y cada campo antes de construir un Item nuevo. Incluye cadenas, campos ausentes, cero y números no finitos en las pruebas.
 
 ## Explicar la frontera
 

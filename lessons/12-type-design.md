@@ -4,7 +4,7 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## What relationship does the generic preserve?
 
-identity links its input and output through T. A generic used only once may add no useful information. groupBy preserves element and key types; mapLimit preserves input and callback result; getField preserves key/value correspondence. Prefer the smallest API that expresses the relationship instead of adding parameters for every implementation detail.
+identity links its input and output through T. A generic used only once may add no useful information. `groupBy` preserves element and key types; `mapLimit` preserves input and callback result; `getField` preserves key/value correspondence. Prefer the smallest API that expresses the relationship instead of adding parameters for every implementation detail.
 
 ```ts check
 function identity<T>(value: T): T { return value; }
@@ -12,7 +12,7 @@ function identity<T>(value: T): T { return value; }
 
 ## Typeof, keyof and indexed access
 
-typeof in a type position extracts the type of an existing value; keyof extracts its keys; indexed access selects value types. This can derive configuration unions without maintaining duplicate lists. Object.keys normally returns string[] because a structurally typed object may have extra runtime properties. An assertion to (keyof T)[] is valid only under stronger assumptions, not for every object.
+typeof in a type position extracts the type of an existing value; `keyof` extracts its keys; indexed access selects value types. This can derive configuration unions without maintaining duplicate lists. `Object.keys` normally returns `string[]` because a structurally typed object may have extra runtime properties. An assertion to `(keyof T)[]` is valid only under stronger assumptions, not for every object.
 
 ```ts check
 const sourceNames = { primary: "MLS", secondary: "Partner" } as const;
@@ -22,7 +22,7 @@ type SourceName = (typeof sourceNames)[SourceKey]; // "MLS" | "Partner"
 
 ## Mapped types
 
-A mapped type visits each key and transforms its property type. An optional clearable patch adds null to each editable field. Apply it only to allowed fields so callers cannot alter identifiers. This type does not implement runtime patch semantics: the function still must distinguish absence, validate values and construct the next state.
+A mapped type visits each key and transforms its property type. An optional clearable patch adds `null` to each editable field. Apply it only to allowed fields so callers cannot alter identifiers. This type does not implement runtime patch semantics: the function still must distinguish absence, validate values and construct the next state.
 
 ```ts check
 type ClearablePatch<T> = {
@@ -34,7 +34,9 @@ type Patch = ClearablePatch<Editable>;
 
 ## Conditional types and infer
 
-infer extracts a matching part in a conditional type. ReturnType gets a function return type and Awaited models await unwrapping; neither executes the function. A naked type parameter on the left of extends distributes over union members. Wrapping the operands in tuples asks about the union as a whole. Use these to read libraries, but do not build a complex conditional type when a normal signature is sufficient.
+`infer` extracts a matching part in a conditional type. `ReturnType` gets a function return type and `Awaited` models `await` unwrapping; neither executes the function.
+
+A naked type parameter on the left of extends distributes over union members. Wrapping the operands in tuples asks about the union as a whole. Use these to read libraries, but do not build a complex conditional type when a normal signature is sufficient.
 
 ```ts check
 type Returned<F> = F extends (...args: never[]) => infer R ? R : never;
@@ -68,7 +70,9 @@ function normalize(value: string | readonly string[]): string | string[] {
 
 ## Assertions, assertion functions and satisfies
 
-as and ! assert facts without runtime checks. An assertion function can perform a real check and narrow after a successful call, or throw on failure. satisfies checks compatibility while as const preserves literal information. None of these validates a loaded configuration unless an actual runtime check is executed.
+as and ! assert facts without runtime checks. An assertion function can perform a real check and narrow after a successful call, or throw on failure.
+
+`satisfies` checks compatibility while `as const` preserves literal information. None of these validates a loaded configuration unless an actual runtime check is executed.
 
 ```ts check
 function assertString(value: unknown): asserts value is string {
@@ -90,7 +94,7 @@ const routes = {
 
 ## Branded identifiers
 
-An intersection with a unique-symbol property prevents casually mixing two string identifier types. Put the assertion in a parser after checking the domain condition. The brand does not attach a runtime symbol to the primitive; after JSON round-trip, reestablish the guarantee at the boundary. Use this when the confusion risk justifies the extra API work.
+An intersection with a unique-symbol property prevents casually mixing two `string` identifier types. Put the assertion in a parser after checking the domain condition. The brand does not attach a runtime symbol to the primitive; after JSON round-trip, reestablish the guarantee at the boundary. Use this when the confusion risk justifies the extra API work.
 
 ```ts check
 declare const listingIdBrand: unique symbol;
@@ -106,7 +110,7 @@ function parseListingId(value: unknown): ListingId {
 
 ## Functions and variance
 
-If an API may call a handler with any Animal, a handler requiring Dog can fail on a cat. strictFunctionTypes catches this for ordinary function properties; method compatibility has exceptions. Explain what the caller may supply and what the callback can safely accept rather than relying only on variance terminology.
+If an API may call a handler with any `Animal`, a handler requiring `Dog` can fail on a cat. `strictFunctionTypes` catches this for ordinary function properties; method compatibility has exceptions. Explain what the caller may supply and what the callback can safely accept rather than relying only on variance terminology.
 
 ```ts check
 type Animal = { name: string };
@@ -123,7 +127,7 @@ Create a handler dictionary for added and removed events. added has a numeric me
 
 ### Spoiler
 
-Map over Event["kind"] and use Extract<Event, {kind: K}> for each handler argument. Dynamic `handlers[event.kind](event)` can lose the relationship in the checker; a switch dispatch is often clearer than hiding the issue with any.
+Map over `Event["kind"]` and use `Extract<Event, {kind: K}>` for each handler argument. Dynamic `handlers[event.kind](event)` can lose the relationship in the checker; a switch dispatch is often clearer than hiding the issue with `any`.
 
 ```ts check
 type Event =

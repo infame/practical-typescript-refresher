@@ -4,11 +4,15 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## Duplicates and stale updates
 
-Duplicate delivery asks whether an event was already handled. Stale update asks whether a newer entity version is already stored. Their keys differ. Versions from unrelated sources are not automatically comparable; use a composite state key unless the domain defines a cross-source ordering. Identity resolution between providers is another business problem.
+Duplicate delivery asks whether an event was already handled. Stale update asks whether a newer entity version is already stored. Their keys differ.
+
+Versions from unrelated sources are not automatically comparable; use a composite state key unless the domain defines a cross-source ordering. Identity resolution between providers is another business problem.
 
 ## Why find-then-insert races
 
-Two callers can both observe a missing record before either inserts it. A JavaScript check does not replace a database uniqueness constraint. Enforce the composite key in storage and combine the condition with the write. A transaction alone is not a magic substitute for choosing the correct constraint, isolation and atomic statement.
+Two callers can both observe a missing record before either inserts it. A JavaScript check does not replace a database uniqueness constraint. Enforce the composite key in storage and combine the condition with the write.
+
+A transaction alone is not a magic substitute for choosing the correct constraint, isolation and atomic statement.
 
 ```ts
 const existing = await db.find(id);
@@ -18,7 +22,9 @@ else await db.update(id, record);
 
 ## Conditional upsert
 
-An INSERT ON CONFLICT with a version condition can keep the highest version despite concurrent delivery. RETURNING distinguishes an applied update from a skipped one. The unique constraint must match the conflict target. Equal versions are skipped in this contract, so their payloads must be immutable or a conflict rule is required. This example demonstrates state selection; it does not magically deduplicate external side effects.
+An INSERT ON CONFLICT with a version condition can keep the highest version despite concurrent delivery. RETURNING distinguishes an applied update from a skipped one. The unique constraint must match the conflict target.
+
+Equal versions are skipped in this contract, so their payloads must be immutable or a conflict rule is required. This example demonstrates state selection; it does not magically deduplicate external side effects.
 
 ```sql
 CREATE TABLE listings (
@@ -41,7 +47,11 @@ RETURNING source_id, listing_id, version;
 
 ## Idempotent side effects
 
-Email, payment or another external effect cannot safely be repeated merely because a record update is conditional. Combine an inbox marker and database changes in the same transaction; an outbox can atomically record work to publish later. A downstream consumer still needs an idempotency key or deduplication policy. Explain the failure window between commit and delivery rather than promising exactly-once behavior without assumptions.
+Email, payment or another external effect cannot safely be repeated merely because a record update is conditional. Combine an inbox marker and database changes in the same transaction; an outbox can atomically record work to publish later.
+
+A downstream consumer still needs an idempotency key or deduplication policy.
+
+Explain the failure window between commit and delivery rather than promising exactly-once behavior without assumptions.
 
 ## Deletion and old events
 
@@ -49,7 +59,7 @@ Physically removing version 5 can let late version 3 recreate the entity. A tomb
 
 ## Write SQL by hand
 
-Use ROW_NUMBER partitioned by the entity key to select a latest row, with a deterministic tie-breaker. A left join must preserve missing right-side rows; count or aggregate according to null semantics. Identify useful indexes from predicates and joins, and inspect the actual query plan. SQL examples need an appropriate schema and database to execute.
+Use ROW_NUMBER partitioned by the entity key to select a latest row, with a deterministic tie-breaker. A left join must preserve missing right-side rows; count or aggregate according to `null` semantics. Identify useful indexes from predicates and joins, and inspect the actual query plan. SQL examples need an appropriate schema and database to execute.
 
 ```sql
 SELECT source_id, listing_id, price_cents, updated_at
@@ -76,7 +86,7 @@ Two events v5 and v3 for the same source/entity complete in reverse order. What 
 
 ### Spoiler
 
-An atomic conditional write protects version 5 regardless of completion order. The email adds an independent effect: use a delivery identity, durable inbox/outbox protocol and downstream replay-safe behavior. A Set in one process disappears on restart and cannot coordinate multiple workers.
+An atomic conditional write protects version 5 regardless of completion order. The email adds an independent effect: use a delivery identity, durable inbox/outbox protocol and downstream replay-safe behavior. A `Set` in one process disappears on restart and cannot coordinate multiple workers.
 
 ## Official references
 

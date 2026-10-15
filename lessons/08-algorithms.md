@@ -4,7 +4,7 @@ A practical refresher. Read the contract, trace the examples, and attempt the ex
 
 ## Hash map: Two Sum
 
-Store previously seen values with their indices. For each value check the needed complement before inserting the current index; this prevents using the same element twice. Clarify whether one answer or all pairs are required and how duplicates should behave. Expected O(n) lookups replace the quadratic nested loop, with O(n) extra space.
+Store previously seen values with their indices. For each value check the needed complement before inserting the current index; this prevents using the same element twice. Clarify whether one answer or all pairs are required and how duplicates should behave. Expected `O(n)` lookups replace the quadratic nested loop, with `O(n)` extra space.
 
 ```ts
 function twoSum(nums: readonly number[], target: number): [number, number] | null {
@@ -38,7 +38,7 @@ function hasPair(sorted: readonly number[], target: number): boolean {
 
 ## Sliding window
 
-Maintain a window with no repeated characters. Record each last-seen position and move the left edge only forward using max; otherwise a repeat before the current window can incorrectly move the edge backward. JavaScript string indexing uses UTF-16 code units, not user-perceived graphemes. State the text model or use an appropriate segmentation strategy.
+Maintain a window with no repeated characters. Record each last-seen position and move the left edge only forward using max; otherwise a repeat before the current window can incorrectly move the edge backward. JavaScript `string` indexing uses UTF-16 code units, not user-perceived graphemes. State the text model or use an appropriate segmentation strategy.
 
 ```ts
 function longestUnique(text: string): number {
@@ -77,7 +77,7 @@ function balanced(text: string): boolean {
 
 ## Merge intervals
 
-Sort a copy by start, then merge when the next interval overlaps according to the endpoint policy. Extend the current end with max; directly assigning the next end breaks nested intervals. Clarify whether touching intervals merge and whether endpoints are inclusive. Sorting makes the overall cost O(n log n).
+Sort a copy by start, then merge when the next interval overlaps according to the endpoint policy. Extend the current end with max; directly assigning the next end breaks nested intervals. Clarify whether touching intervals merge and whether endpoints are inclusive. Sorting makes the overall cost `O(n log n)`.
 
 ```ts
 function mergeIntervals(input: readonly (readonly [number, number])[]): [number, number][] {
@@ -114,7 +114,13 @@ function lowerBound(values: readonly number[], target: number): number {
 
 ## BFS, DFS and heaps
 
-BFS explores by levels and finds shortest paths only in an unweighted graph. DFS is useful for reachability and cycle reasoning. Mark visited nodes at enqueue time to avoid duplicate queue growth and use a head index instead of shift. A heap supports repeated priority extraction in O(log n); it is not a sorted array. This chapter introduces these patterns, but does not provide a complete dynamic-programming or competitive-programming curriculum.
+BFS explores by levels and finds shortest paths only in an unweighted graph. DFS is useful for reachability and cycle reasoning.
+
+Mark visited nodes at enqueue time to avoid duplicate queue growth and use a head index instead of shift.
+
+A heap supports repeated priority extraction in `O(log n)`; it is not a sorted array.
+
+This chapter introduces these patterns, but does not provide a complete dynamic-programming or competitive-programming curriculum.
 
 ## Practice
 

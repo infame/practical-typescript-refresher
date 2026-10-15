@@ -2,11 +2,11 @@
 
 ## 1. Parse one update
 
-Implement `parseEntity(value: unknown): EntityUpdate`. Throw an `Error` on invalid input; invalid input does not return null or undefined. Require own nonempty sourceId, eventId and entityId strings, normalize them with trim, require a nonnegative safe integer version and finite nonnegative numeric metric. Reject null, arrays, numeric strings and missing fields. Return a new object; unrelated fields are ignored. The numeric field represents the selected domain metric, not a claim that every real business metric follows this simplified contract.
+Implement `parseEntity(value: unknown): EntityUpdate`. Throw an `Error` on invalid input; invalid input does not return `null` or `undefined`. Require own nonempty `sourceId`, `eventId` and `entityId` strings, normalize them with trim, require a nonnegative safe integer version and finite nonnegative numeric metric. Reject `null`, arrays, numeric strings and missing fields. Return a new object; unrelated fields are ignored. The numeric field represents the selected domain metric, not a claim that every real business metric follows this simplified contract.
 
 ### Spoiler
 
-Exclude null and arrays first, then establish each field type and business condition. Validate syntax before conversion when a different contract allows strings. The local Record assertion below is restricted to an already-checked object; each field is still checked at runtime. It is not an assertion that the whole input is valid.
+Exclude `null` and arrays first, then establish each field type and business condition. Validate syntax before conversion when a different contract allows strings. The local `Record` assertion below is restricted to an already-checked object; each field is still checked at runtime. It is not an assertion that the whole input is valid.
 
 ```ts
 export type EntityUpdate = {
@@ -52,11 +52,11 @@ export function parseEntity(value: unknown): EntityUpdate {
 
 ## 2. Deduplicate and keep the latest
 
-Input is already valid. eventId is unique within sourceId; immutable duplicate deliveries count once. Select the highest version per sourceId/entityId, keep the first at equal version and preserve first entity appearance. Do not mutate input. Check one ID in two sources, reversed versions, duplicate events and separator characters in IDs.
+Input is already valid. `eventId` is unique within `sourceId`; immutable duplicate deliveries count once. Select the highest version per `sourceId`/`entityId`, keep the first at equal version and preserve first entity appearance. Do not mutate input. Check one ID in two sources, reversed versions, duplicate events and separator characters in IDs.
 
 ### Spoiler
 
-Use two independent keys. A Set records delivered events and a Map keeps entity winners. JSON encoding a pair avoids delimiter collisions. Replace only for a greater version; Map preserves the position of an existing key. This batch-only deduplication is not a durable inbox and retains O(events + entities) keys.
+Use two independent keys. A `Set` records delivered events and a `Map` keeps entity winners. JSON encoding a pair avoids delimiter collisions. Replace only for a greater version; `Map` preserves the position of an existing key. This batch-only deduplication is not a durable inbox and retains `O(events + entities)` keys.
 
 ```ts
 export type EntityUpdate = {
@@ -83,11 +83,11 @@ export function latestEntities(input: readonly EntityUpdate[]): EntityUpdate[] {
 
 ## 3. Process with partial failures
 
-Accept already-validated entities, a positive safe integer limit and save(entity): Promise<void>. Bound active saves, preserve input result order, keep running after per-entity failures, and return an ok union for each entity. An invalid limit rejects even when input is empty. A synchronous throw and throw undefined are failures too.
+Accept already-validated entities, a positive safe integer limit and `save(entity)`: `Promise<void>`. Bound active saves, preserve input result order, keep running after per-entity failures, and return an ok union for each entity. An invalid limit rejects even when input is empty. A synchronous throw and `throw undefined` are failures too.
 
 ### Spoiler
 
-Catch inside the limiter callback so expected failures become values. Await save before reporting success. Keep Error narrowing explicit. mapLimit is the helper from chapter 5 and examples/core.ts; it is imported here rather than duplicated. Type the union result to preserve literal discriminators.
+Catch inside the limiter callback so expected failures become values. Await save before reporting success. Keep `Error` narrowing explicit. `mapLimit` is the helper from chapter 5 and `examples/core.ts`; it is imported here rather than duplicated. Type the union result to preserve literal discriminators.
 
 ```ts
 import { mapLimit } from './core.ts';
@@ -118,4 +118,4 @@ export async function processEntities(
 
 ## Verify your attempt
 
-Test zero, absent fields, a repeated event, equal and older versions, scope collisions, reversed completion, synchronous throw and invalid limit. Run npm run check and npm test. Then change the failure policy or add a new field and implement again without the answer.
+Test zero, absent fields, a repeated event, equal and older versions, scope collisions, reversed completion, synchronous throw and invalid limit. Run `npm run check` and `npm test`. Then change the failure policy or add a new field and implement again without the answer.
