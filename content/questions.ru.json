@@ -51,7 +51,7 @@
     "answer": 1,
     "explanation": "Readonly запрещает заменить свойство, но вложенный массив остаётся изменяемым. Нужен readonly string[].",
     "chapter": 11,
-    "url": "https://www.typescriptlang.org/docs/handbook/2/object-types.html",
+    "url": "https://www.typescriptlang.org/docs/handbook/2/objects.html",
     "source": "TypeScript: Object Types"
   },
   {

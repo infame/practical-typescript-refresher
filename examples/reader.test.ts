@@ -41,6 +41,19 @@ test('spoiler is a closed disclosure, excluded from TOC, indexed with code and f
     1,
   );
 });
+test('search ranks a matching section title above incidental body mentions and keeps equal results stable', () => {
+  const sections = [
+    { id: 'body-first', title: 'Retries', lessonTitle: 'Failures', text: 'Clear the cache.' },
+    { id: 'title', title: 'Async cache', lessonTitle: 'Workshop', text: 'Share pending calls.' },
+    { id: 'body-second', title: 'Storage', lessonTitle: 'Data', text: 'A cache retains values.' },
+  ];
+  assert.deepEqual(
+    searchSections(sections, 'cache').map((hit: { id: string }) => hit.id),
+    ['title', 'body-first', 'body-second'],
+  );
+  assert.equal(searchSections(sections, 'cache pending')[0].id, 'title');
+  assert.equal(searchSections(sections, 'cache absent').length, 0);
+});
 test('same source contract gets consistent domain identifiers and metric names', () => {
   for (const domain of domains) {
     const s = adaptDomain(

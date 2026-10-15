@@ -7,6 +7,20 @@ const count = (await fs.readdir(path.join(root, 'lessons'))).filter((f) =>
 ).length;
 let checked = 0,
   pagesChecked = 0;
+const assetVersions = {};
+for (const file of ['app.js', 'search.mjs', 'style.css', 'highlight.css']) {
+  const contents = await fs.readFile(path.join(root, 'assets', file));
+  assetVersions[file] = createHash('sha256').update(contents).digest('hex').slice(0, 12);
+}
+const app = await fs.readFile(path.join(root, 'assets/app.js'), 'utf8');
+if (!app.includes(`./search.mjs?v=${assetVersions['search.mjs']}`))
+  throw new Error('Unversioned or mismatched search module');
+const allowedAssets = new Set([
+  ...Object.keys(assetVersions),
+  ...['en', 'ru', 'es'].map((lang) => `course-${lang}.js`),
+]);
+for (const file of await fs.readdir(path.join(root, 'assets')))
+  if (!allowedAssets.has(file)) throw new Error('Unexpected published asset: ' + file);
 for (const lang of ['en', 'ru', 'es']) {
   const folder = path.join(root, lang === 'en' ? '' : lang);
   const script = await fs.readFile(path.join(root, `assets/course-${lang}.js`));
@@ -18,6 +32,9 @@ for (const lang of ['en', 'ru', 'es']) {
     pagesChecked++;
     if (!html.includes(`assets/course-${lang}.js?v=${version}`))
       throw new Error('Unversioned or mismatched course data: ' + page);
+    for (const file of ['app.js', 'style.css', 'highlight.css'])
+      if (!html.includes(`assets/${file}?v=${assetVersions[file]}`))
+        throw new Error('Unversioned or mismatched asset: ' + page + '/' + file);
     if (!html.includes(`html lang="${lang}"`)) throw new Error('Wrong language');
     for (const id of ['domain-select', 'language-select', 'chapter-search'])
       if (!html.includes(`id="${id}"`)) throw new Error('Missing global control ' + id);
@@ -25,6 +42,8 @@ for (const lang of ['en', 'ru', 'es']) {
     if (chapter && (html.match(/class="pager"/g) || []).length !== 2)
       throw new Error('Missing navigation');
     if (chapter && !html.includes('class="solution"')) throw new Error('Missing spoiler');
+    if (chapter && !html.includes('<nav class="section-nav"'))
+      throw new Error('Missing visible chapter contents');
     if (page === 'practice.html' && html.includes('lesson-toc'))
       throw new Error('Unnecessary practice TOC');
     for (const [, href] of html.matchAll(/(?:href|src)="([^"#]+)"/g)) {

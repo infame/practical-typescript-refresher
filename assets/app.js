@@ -79,11 +79,10 @@ function renderPage() {
     const toc = document.getElementById('lesson-toc');
     if (toc) {
       toc.replaceChildren();
-      const details = el('details', '', toc);
-      details.className = 'section-nav';
-      el('summary', ui.inChapter, details);
-      const nav = el('nav', '', details);
+      const nav = el('nav', '', toc);
+      nav.className = 'section-nav';
       nav.setAttribute('aria-label', ui.inChapter);
+      el('strong', ui.inChapter, nav);
       for (const heading of rendered.toc) {
         const a = el('a', heading.title, nav);
         a.href = '#' + heading.id;
@@ -213,13 +212,23 @@ function renderSearch() {
   }
 }
 searchInput.addEventListener('input', renderSearch);
+searchInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    searchInput.value = '';
+    renderSearch();
+  }
+});
 const form = document.getElementById('diagnostic-form');
 if (form) {
   const results = document.getElementById('diagnostic-results'),
     status = document.getElementById('diagnostic-status');
-  const link = (text, href, parent) => {
+  const link = (text, href, parent, newTab = false) => {
     const a = el('a', text, parent);
     a.href = href;
+    if (newTab) {
+      a.target = '_blank';
+      a.rel = 'noopener';
+    }
     return a;
   };
   form.addEventListener('submit', (event) => {
@@ -246,6 +255,7 @@ if (form) {
     results.hidden = false;
     el('h3', ui.resultTitle, results);
     el('p', gaps.length ? ui.reviewPlan : ui.noGaps, results);
+    el('p', ui.reviewLinks, results);
     for (const q of gaps) {
       const section = el('section', '', results);
       section.className = 'gap-result';
@@ -253,9 +263,9 @@ if (form) {
       el('p', ui.rightAnswer + ': ' + q.options[q.answer] + '. ' + q.explanation, section);
       const p = el('p', '', section),
         lesson = byNumber.get(q.chapter);
-      link(lesson.title, lesson.href, p);
+      link(lesson.title, lesson.href, p, true);
       p.append(' · ');
-      link(q.source, q.url, p);
+      link(q.source, q.url, p, true);
     }
     link(ui.practiceNext, 'practice.html', results);
     const review = el('details', '', results);
@@ -263,7 +273,7 @@ if (form) {
     for (const q of course.questions) {
       el('h4', q.topic, review);
       el('p', q.options[q.answer] + '. ' + q.explanation, review);
-      link(q.source, q.url, review);
+      link(q.source, q.url, review, true);
     }
     internalLinks();
     results.scrollIntoView({ block: 'start', behavior: 'instant' });
@@ -277,6 +287,14 @@ if (form) {
 if (matchMedia('(max-width:760px)').matches) document.querySelector('.course-menu').open = false;
 renderPage();
 progress();
+selector.disabled = false;
+document.getElementById('language-select').disabled = false;
+searchInput.disabled = false;
+const completionButton = document.getElementById('complete-button');
+if (completionButton) completionButton.disabled = false;
+form?.querySelectorAll('fieldset, button').forEach((control) => {
+  control.disabled = false;
+});
 if (location.hash) {
   const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
   target?.scrollIntoView();

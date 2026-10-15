@@ -51,7 +51,7 @@
     "answer": 1,
     "explanation": "Readonly impide sustituir tags; el array necesita readonly string[] para impedir modificarlo mediante esa vista.",
     "chapter": 11,
-    "url": "https://www.typescriptlang.org/docs/handbook/2/object-types.html",
+    "url": "https://www.typescriptlang.org/docs/handbook/2/objects.html",
     "source": "Referencia oficial"
   },
   {

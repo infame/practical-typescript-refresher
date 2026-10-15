@@ -2,9 +2,11 @@
 
 [Abrir el entrenamiento](https://infame.github.io/practical-typescript-refresher/es/) · [English](README.md) · [Русский](README.ru.md)
 
-Para quienes ya programan pero han olvidado detalles de TypeScript. **Detectar lagunas → repasar → escribir código → revisar la solución.** Los 14 capítulos, el diagnóstico y la práctica están disponibles en inglés, ruso y español. Inglés es el idioma predeterminado.
+Para quienes ya programan pero han olvidado detalles de TypeScript. **Elegir un tema → repasar → escribir código → revisar la solución.** Los 14 capítulos, la autoevaluación opcional y la práctica están disponibles en inglés, ruso y español. Inglés es el idioma predeterminado.
 
-El diagnóstico tiene 12 preguntas. Los errores y «No lo sé» generan explicaciones, capítulos recomendados y enlaces a MDN / TypeScript / Node. La puntuación mide respuestas, no competencia para programar. No hay registro, analítica ni envío de respuestas.
+Empieza por un tema de la portada o sigue una ruta guiada. Cada capítulo tiene explicaciones, ejemplos y ejercicios con respuestas bajo spoiler. La práctica reúne tres ejercicios conectados.
+
+La autoevaluación opcional contiene 12 preguntas con explicaciones, capítulos y enlaces a MDN / TypeScript / Node. No evalúa tu habilidad para programar. Los capítulos y las referencias se abren en otra pestaña; las respuestas no se guardan al salir de la página. No hay registro, analítica ni envío de respuestas.
 
 Arriba a la derecha elige idioma y dominio: catálogo, analítica, trabajos en segundo plano o perfiles. Los contratos de los tres ejercicios son iguales; cambian nombres de entidades y campos en los ejemplos. Se conservan página y recorrido. La búsqueda indexa explicaciones y código, incluidas soluciones, y enlaza a la sección correspondiente. El progreso se guarda localmente y se comparte entre idiomas.
 

@@ -2,17 +2,19 @@
 
 [Open the training](https://infame.github.io/practical-typescript-refresher/) · [Русский](https://infame.github.io/practical-typescript-refresher/ru/) · [Español](https://infame.github.io/practical-typescript-refresher/es/)
 
-For developers who know programming but have forgotten the details of TypeScript. **Find gaps → review explanations → write code → check your reasoning.** English is the default; all 14 chapters, the diagnostic and practice are also available in Russian and Spanish.
+For developers who know programming but have forgotten the details of TypeScript. **Choose a topic → review the rule → write code → check your reasoning.** English is the default; all 14 chapters, the optional self-check and practice are also available in Russian and Spanish.
 
 [Русский README](README.ru.md) · [README en español](README.es.md) · [Curriculum](course.json) · [Evaluation](docs/EVALUATION.md) · [Content audit](docs/AUDIT.md)
 
-## Find your gaps, then practice
+## Choose a topic, then practice
 
-Start with 12 diagnostic questions. Wrong and unknown answers produce explanations, relevant chapters and official MDN / TypeScript / Node documentation. This score measures your answers, not coding competence. No account, analytics or uploaded answers.
+Start with the topic directory or follow a reading route. Each chapter includes explanations, examples and an exercise with a spoiler answer. Try the shared practice when you want to write code.
+
+An optional 12-question self-check links individual answers to explanations, chapters and official MDN / TypeScript / Node documentation. It is not a coding skill assessment. Review links open in a new tab to keep your current answers; answers are not saved when you leave the page. No account, analytics or uploaded answers.
 
 Choose your domain at the top right: product catalog, analytics events, background jobs or profile sync. The same lessons and three practice contracts use the selected entity names and fields. Changing domains keeps your page, language and reading route. [Practice contracts and domain mapping](docs/DOMAIN-PRACTICE.md).
 
-Search indexes explanations **and code**, including spoiler answers, and links to the matching section. Solutions stay collapsed until you open them, or follow a search result that matches their content. Chapter progress is saved locally and shared across languages.
+Search indexes explanations **and code**, including spoiler answers, ranks title matches first and links to the matching section. Solutions stay collapsed until you open them, or follow a search result that matches their content. Chapter progress is saved locally and shared across languages.
 
 If this helps, a GitHub star makes the project easier to discover. Corrections, clearer explanations and reports of gaps are welcome.
 

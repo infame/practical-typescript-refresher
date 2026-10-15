@@ -16,8 +16,17 @@ await fs.copyFile(
   path.join(root, 'node_modules/highlight.js/styles/github.css'),
   path.join(root, 'assets/highlight.css'),
 );
-for (const dir of ['assets', 'lessons', 'examples', 'docs', 'content'])
+for (const dir of ['lessons', 'examples', 'docs', 'content'])
   await fs.cp(path.join(root, dir), path.join(dist, dir), { recursive: true });
+await fs.mkdir(path.join(dist, 'assets'));
+const assetVersions = {};
+for (const file of ['search.mjs', 'app.js', 'style.css', 'highlight.css']) {
+  let source = await fs.readFile(path.join(root, 'assets', file), 'utf8');
+  if (file === 'app.js')
+    source = source.replace('./search.mjs', `./search.mjs?v=${assetVersions['search.mjs']}`);
+  assetVersions[file] = createHash('sha256').update(source).digest('hex').slice(0, 12);
+  await fs.writeFile(path.join(dist, 'assets', file), source);
+}
 for (const f of [
   'README.md',
   'README.ru.md',
@@ -116,7 +125,7 @@ for (const lang of ['en', 'ru', 'es']) {
   const start = byNumber.get(routeIds[0]);
   function shell(title, body, lesson = null) {
     const current = lesson?.number || 0;
-    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css"><link rel="stylesheet" href="${base}assets/style.css"><script src="${base}assets/course-${lang}.js?v=${courseVersion}" defer></script><script src="${base}assets/app.js" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select">${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select">${[
+    return `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${escape(ui.description)}"><meta name="color-scheme" content="light"><title>${escape(title)} · ${ui.brand}</title><link rel="stylesheet" href="${base}assets/highlight.css?v=${assetVersions['highlight.css']}"><link rel="stylesheet" href="${base}assets/style.css?v=${assetVersions['style.css']}"><script src="${base}assets/course-${lang}.js?v=${courseVersion}" defer></script><script src="${base}assets/app.js?v=${assetVersions['app.js']}" type="module"></script></head><body data-lesson="${current}" data-page="${lesson?.id || (title === ui.practice ? 'practice' : 'home')}"><a class="skip" href="#content">${ui.skip}</a><header class="site-header"><a class="brand" href="index.html">${ui.brand}</a><div class="header-controls"><label>${ui.domain}<select id="domain-select" disabled>${domains.map((d) => `<option value="${d.id}">${ui[d.id]}</option>`).join('')}</select></label><label>${ui.language}<select id="language-select" disabled>${[
       ['en', 'English'],
       ['ru', 'Русский'],
       ['es', 'Español'],
@@ -127,7 +136,7 @@ for (const lang of ['en', 'ru', 'es']) {
       )
       .join(
         '',
-      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="practice.html">${ui.practice}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><p class="storage-note" hidden>${ui.storageNote}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
+      )}</select></label><a href="https://github.com/infame/practical-typescript-refresher">GitHub</a></div></header><div class="layout"><aside><details class="course-menu" open><summary>${ui.contents}</summary><nav class="primary-nav"><a href="index.html#topics">${ui.topics}</a><a href="practice.html">${ui.practice}</a><a href="index.html#diagnostic">${ui.diagnostic}</a><a href="index.html#scope">${ui.scope}</a></nav><label class="search-label" for="chapter-search">${ui.search}</label><input id="chapter-search" disabled type="search" placeholder="${escape(ui.searchHint)}" autocomplete="off"><div id="search-results" aria-live="polite" hidden></div><div class="progress-box"><p id="progress-label" aria-live="polite"></p><progress id="course-progress" max="${lessons.length}" value="0">0%</progress><p class="storage-note" hidden>${ui.storageNote}</p></div><ol class="chapters">${ordered.map((l, i) => `<li><a href="${l.href}" data-chapter="${l.number}" ${current === l.number ? 'aria-current="page"' : ''}><span class="chapter-number">${i + 1}</span><span>${escape(l.title)}</span><span class="check" aria-hidden="true"></span></a></li>`).join('')}</ol></details></aside><main id="content" tabindex="-1">${body}</main></div><footer class="site-footer"><a href="https://github.com/infame/practical-typescript-refresher">${ui.github}</a></footer></body></html>`;
   }
   async function output(file, html) {
     await fs.writeFile(path.join(directory, file), html);
@@ -143,13 +152,13 @@ for (const lang of ['en', 'ru', 'es']) {
     return `<section class="domain-vocabulary"><strong>${ui.domainModel}: <span id="domain-name">${ui.catalog}</span></strong><p>${ui.entity}: <code id="domain-entity">Product</code> · ID: <code id="domain-id">productId</code> · ${ui.metric}: <code id="domain-metric">price</code></p><small>${ui.terms}</small></section>`;
   }
   function toc(rendered) {
-    return `<nav class="local-toc" aria-label="${ui.inChapter}"><strong>${ui.inChapter}</strong>${rendered.toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>`;
+    return `<nav class="section-nav" aria-label="${ui.inChapter}"><strong>${ui.inChapter}</strong>${rendered.toc.map((h) => `<a href="#${h.id}">${escape(h.title)}</a>`).join('')}</nav>`;
   }
   for (const lesson of lessons) {
     const rendered = pages.catalog[lesson.id];
     const page = shell(
       lesson.title,
-      `${pager(lesson, 'top')}<div class="lesson-meta"><span id="route-label">${ui.routeRefresh}</span><a href="${base + lesson.sourcePath}" id="markdown-link">${ui.markdown}</a></div>${vocabulary()}<div id="lesson-toc">${toc(rendered)}</div><article id="lesson-article">${rendered.html}</article><div class="completion"><button id="complete-button" type="button" aria-pressed="false">${ui.mark}</button><span id="completion-status">${ui.tryFirst}</span></div>${pager(lesson, 'bottom')}<p><a href="practice.html">${ui.practiceNext}</a></p>`,
+      `${pager(lesson, 'top')}<div class="lesson-meta"><span id="route-label">${ui.routeRefresh}</span><a href="${base + lesson.sourcePath}" id="markdown-link">${ui.markdown}</a></div>${vocabulary()}<div id="lesson-toc">${toc(rendered)}</div><article id="lesson-article">${rendered.html}</article><div class="completion"><button id="complete-button" type="button" disabled aria-pressed="false">${ui.mark}</button><span id="completion-status">${ui.tryFirst}</span></div>${pager(lesson, 'bottom')}<p><a href="practice.html">${ui.practiceNext}</a></p>`,
       lesson,
     );
     await output(lesson.href, page);
@@ -162,7 +171,7 @@ for (const lang of ['en', 'ru', 'es']) {
       `<h1>${ui.practice}</h1><p>${ui.practiceIntro}</p>${vocabulary()}<section class="practice-prerequisites"><h2>${ui.prerequisites}</h2><p>${[3, 1, 5, 9].map((n) => `<a href="${byNumber.get(n).href}">${escape(byNumber.get(n).title)}</a>`).join(' · ')}</p></section><article id="lesson-article">${pract.html}</article><p><a href="${base}content/practice.${lang}.md">${ui.markdown}</a> · <a href="${base}examples/training-core.ts">TypeScript</a></p><a class="primary-link" href="${byNumber.get(10).href}">${escape(byNumber.get(10).title)}</a>`,
     ),
   );
-  const quiz = `<section id="diagnostic"><h2>${ui.diagnostic}</h2><p>${ui.diagnosticIntro}</p><details><summary>${ui.startDiagnostic}</summary><form id="diagnostic-form">${questions.map((q, i) => `<fieldset><legend>${i + 1}. ${escape(q.topic)}</legend>${renderContent('```ts\n' + q.code + '\n```', ui.solution).html}<p>${escape(q.prompt)}</p>${[...q.options, ui.unknown].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}">${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit">${ui.showGaps}</button><button type="reset" class="secondary-button">${ui.reset}</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
+  const quiz = `<section id="diagnostic"><h2>${ui.diagnostic}</h2><p>${ui.diagnosticIntro}</p><details><summary>${ui.startDiagnostic}</summary><form id="diagnostic-form">${questions.map((q, i) => `<fieldset disabled><legend>${i + 1}. ${escape(q.topic)}</legend>${renderContent('```ts\n' + q.code + '\n```', ui.solution).html}<p>${escape(q.prompt)}</p>${[...q.options, ui.unknown].map((o, j) => `<label class="answer-option"><input type="radio" name="q${i}" value="${j}">${escape(o)}</label>`).join('')}</fieldset>`).join('')}<button type="submit" disabled>${ui.showGaps}</button><button type="reset" class="secondary-button" disabled>${ui.reset}</button><p id="diagnostic-status" role="status"></p></form><div id="diagnostic-results" hidden></div></details></section>`;
   const scope = `<section id="scope"><h2>${ui.scope}</h2><p>${ui.scopeIntro}</p><table><thead><tr><th>${ui.trained}</th><th>${ui.sources}</th></tr></thead><tbody>${ui.coverage
     .slice(0, 2)
     .map(
@@ -179,14 +188,21 @@ for (const lang of ['en', 'ru', 'es']) {
   const tracks = ['refresher', 'interview']
     .map(
       (key) =>
-        `<section class="track"><h3>${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</h3><p>${key === 'refresher' ? ui.routeRefreshDesc : ui.routeInterviewDesc}</p><a class="primary-link" href="${byNumber.get(config.tracks[key].chapters[0]).href}?track=${key}">${ui.startRoute}</a></section>`,
+        `<section class="track"><h3>${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</h3><p>${key === 'refresher' ? ui.routeRefreshDesc : ui.routeInterviewDesc}</p><a class="primary-link" href="${byNumber.get(config.tracks[key].chapters[0]).href}?track=${key}">${ui.startRoute}: ${key === 'refresher' ? ui.routeRefresh : ui.routeInterview}</a></section>`,
     )
     .join('');
+  const topics = `<section id="topics"><h2>${ui.topics}</h2><p>${ui.topicsIntro}</p><div class="topic-groups">${ui.topicGroups
+    .map(([title, description, chapters]) => {
+      const selected = chapters.split(',').map((n) => byNumber.get(Number(n.trim())));
+      if (selected.some((lesson) => !lesson)) throw new Error('Invalid topic group');
+      return `<section class="topic-group"><h3>${escape(title)}</h3><p>${escape(description)}</p><ul>${selected.map((lesson) => `<li><a href="${lesson.href}">${escape(lesson.title)}</a></li>`).join('')}</ul></section>`;
+    })
+    .join('')}</div></section>`;
   await output(
     'index.html',
     shell(
       ui.home,
-      `<section class="intro"><h1>${ui.hero.split('\n').join('<br>')}</h1><p class="lead">${ui.intro}</p><a class="primary-link" href="#diagnostic">${ui.diagnostic}</a> <a id="resume-link" href="${start.href}">${ui.start}</a><p>${ui.domainNote}</p></section><section class="journey"><h2>${ui.journey}</h2><ol>${[ui.journey1, ui.journey2, ui.journey3, ui.journey4].map((s) => `<li>${s.replace(/^\d\. /, '')}</li>`).join('')}</ol></section>${quiz}<section><h2>${ui.route}</h2><div class="tracks">${tracks}</div></section><section><h2>${ui.practice}</h2><p>${ui.practiceIntro}</p><a class="primary-link" href="practice.html" id="domain-practice-link">${ui.practiceNext}</a></section>${scope}`,
+      `<section class="intro"><h1>${ui.hero.split('\n').join('<br>')}</h1><p class="lead">${ui.intro}</p><div class="entry-actions"><a class="primary-link" id="resume-link" href="${start.href}">${ui.start}</a><a href="#topics">${ui.browseTopics}</a></div></section>${topics}<section id="practice-entry"><h2>${ui.practice}</h2><p>${ui.practiceIntro}</p><a class="primary-link" href="practice.html" id="domain-practice-link">${ui.practiceNext}</a></section><section id="routes"><h2>${ui.route}</h2><div class="tracks">${tracks}</div></section>${quiz}${scope}`,
     ),
   );
 }

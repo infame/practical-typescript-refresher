@@ -21,7 +21,7 @@
     "prettier": "^3.9.9",
     "typescript": "^7.0.2"
   },
-  "description": "Practical TypeScript refresher: find gaps, review explanations and write code. English, Russian and Spanish.",
+  "description": "Practical TypeScript refresher: choose a topic, review explanations and write code. English, Russian and Spanish.",
   "license": "MIT",
   "engines": {
     "node": ">=24"

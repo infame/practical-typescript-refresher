@@ -170,26 +170,6 @@ progress::-moz-progress-bar {
 .chapters .is-done .check::after {
   content: '✓';
 }
-.local-toc {
-  position: sticky;
-  top: 30px;
-  align-self: start;
-  font-size: 0.78rem;
-  line-height: 1.5;
-}
-.local-toc strong {
-  display: block;
-  margin: 12px 0;
-}
-.local-toc a {
-  display: block;
-  color: var(--muted);
-  text-decoration: none;
-  margin: 12px 0;
-}
-.local-toc a:hover {
-  color: var(--blue);
-}
 main {
   min-width: 0;
   outline: none;
@@ -281,7 +261,7 @@ th {
   margin-top: 6px;
   line-height: 1.4;
 }
-.next {
+.pager [data-next] {
   text-align: right;
 }
 .page-count {
@@ -342,12 +322,15 @@ button[aria-pressed='true'] {
   margin-top: 6px;
 }
 .intro h1 {
-  font-size: clamp(2.4rem, 5vw, 3.5rem);
+  font-size: clamp(2.1rem, 4vw, 2.8rem);
+  margin: 0 0 18px;
   line-height: 1.13;
   letter-spacing: -0.04em;
 }
 .lead {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0 0 16px;
   color: var(--muted);
 }
 .resume-note {
@@ -414,9 +397,6 @@ button[aria-pressed='true'] {
     gap: 30px;
     max-width: 1100px;
   }
-  .local-toc {
-    display: none;
-  }
 }
 @media (max-width: 760px) {
   .site-header {
@@ -469,7 +449,7 @@ button[aria-pressed='true'] {
 }
 @media print {
   aside,
-  .local-toc,
+  .section-nav,
   .pager,
   .completion,
   .site-header,
@@ -625,7 +605,7 @@ legend {
   padding: 12px 0;
   margin: 0 16px;
 }
-/* One consistent reader: global controls, full-text results, optional section links. */
+/* One consistent reader: global controls, full-text results and visible section links. */
 .layout {
   grid-template-columns: 255px minmax(0, 820px);
   max-width: 1200px;
@@ -679,13 +659,10 @@ legend {
 .section-nav {
   margin: 20px 0;
   font-size: 0.9rem;
-}
-.section-nav nav {
   display: grid;
   gap: 8px;
   padding: 16px 0;
 }
-.section-nav summary,
 .solution summary {
   cursor: pointer;
   color: var(--blue);
@@ -723,8 +700,54 @@ legend {
 #search-results > p {
   font-size: 0.8rem;
 }
-.journey li {
-  padding-left: 8px;
+.entry-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.entry-actions .primary-link {
+  margin: 0;
+}
+#topics > h2 {
+  margin-top: 36px;
+}
+.topic-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px;
+  margin-top: 24px;
+}
+.topic-group {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.topic-group h3 {
+  margin: 0;
+}
+.topic-group p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 10px 0;
+}
+.topic-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.topic-group li {
+  margin: 0;
+}
+.topic-group a {
+  display: inline-block;
+  padding: 6px 0;
+  line-height: 1.5;
+}
+#topics,
+#practice-entry,
+#routes {
+  scroll-margin-top: 24px;
 }
 #scope table {
   width: 100%;
@@ -742,14 +765,36 @@ legend {
   }
   .header-controls {
     margin-top: 16px;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 96px auto;
+    gap: 10px;
+  }
+  .header-controls label {
+    min-width: 0;
   }
   .header-controls select {
-    max-width: 190px;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    max-width: none;
+  }
+  .header-controls > a {
+    align-self: end;
+    padding: 12px 0;
   }
   .layout {
     display: block;
     padding: 20px 18px 48px;
+  }
+  .topic-groups {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .entry-actions {
+    gap: 12px 20px;
+  }
+  .intro h1 {
+    font-size: 2.1rem;
   }
   .domain-vocabulary {
     padding: 12px;

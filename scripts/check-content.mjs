@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import MarkdownIt from 'markdown-it';
 const root = path.resolve(import.meta.dirname, '..');
 const read = async (file) => fs.readFile(path.join(root, file), 'utf8');
 const json = async (file) => JSON.parse(await read(file));
@@ -14,6 +15,16 @@ for (const lang of ['en', 'ru', 'es']) {
     Object.keys(ui[lang]).sort(),
     Object.keys(ui.en).sort(),
     `Missing UI keys: ${lang}`,
+  );
+  assert.deepEqual(
+    ui[lang].topicGroups.map((group) => group[2]),
+    ui.en.topicGroups.map((group) => group[2]),
+    `Changed topic grouping: ${lang}`,
+  );
+  assert.deepEqual(
+    ui[lang].topicGroups.flatMap((group) => group[2].split(',').map(Number)).sort((a, b) => a - b),
+    files.map((file) => Number(file.slice(0, 2))).sort((a, b) => a - b),
+    `Topic directory must include each chapter once: ${lang}`,
   );
   const localized = await json(`content/questions.${lang}.json`);
   assert.equal(localized.length, questions.length, `Question count: ${lang}`);
@@ -60,6 +71,37 @@ for (const file of [
   assert.ok(!/[\u0400-\u04ff]/.test(await read(file)), `Non-English canonical source: ${file}`);
 }
 assert.ok(!/[\u0400-\u04ff]/.test(JSON.stringify(ui.en)), 'Non-English canonical UI');
+const markdown = new MarkdownIt();
+let sourceLinks = 0;
+async function checkMarkdownLinks(directory) {
+  for (const entry of await fs.readdir(path.join(root, directory), { withFileTypes: true })) {
+    const file = path.join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (directory !== '') await checkMarkdownLinks(file);
+      continue;
+    }
+    if (!entry.name.endsWith('.md')) continue;
+    const tokens = markdown.parse(await read(file), {});
+    const visit = async (tokens) => {
+      for (const token of tokens) {
+        if (token.type === 'link_open') {
+          const href = token.attrGet('href');
+          if (!/^(?:[a-z][a-z\d+.-]*:|#)/i.test(href)) {
+            const target = path.resolve(root, directory, decodeURIComponent(href.split(/[?#]/)[0]));
+            await fs.access(target).catch(() => {
+              throw new Error(`Broken Markdown source link: ${file} -> ${href}`);
+            });
+            sourceLinks++;
+          }
+        }
+        if (token.children) await visit(token.children);
+      }
+    };
+    await visit(tokens);
+  }
+}
+for (const directory of ['', 'lessons', 'content', 'docs', 'benchmarks'])
+  await checkMarkdownLinks(directory);
 console.log(
-  `Checked canonical English sources, ${files.length} chapters in 3 editions, UI/question parity, 10 repairs and 15 review links per edition.`,
+  `Checked canonical English sources, ${files.length} chapters in 3 editions, UI/question parity, 10 repairs and 15 review links per edition; ${sourceLinks} Markdown source links.`,
 );
