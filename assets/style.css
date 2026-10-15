@@ -540,6 +540,7 @@ button[aria-pressed='true'] {
   .course-menu {
     max-height: none;
     overflow: visible;
+    padding-bottom: 12px;
   }
   .tracks {
     grid-template-columns: 1fr;
